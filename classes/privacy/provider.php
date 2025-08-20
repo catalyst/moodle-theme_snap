@@ -91,7 +91,8 @@ class provider implements metadata_provider, request_provider,
         $sql = "SELECT tscf.id, c.id AS courseid, c.fullname, tscf.timefavorited
                   FROM {theme_snap_course_favorites} tscf
                   JOIN {course} c ON c.id = tscf.courseid
-                 WHERE tscf.userid = :userid";
+                 WHERE tscf.userid = :userid
+              ORDER BY tscf.id";
 
         $favorites = $DB->get_recordset_sql($sql, ['userid' => $userid]);
         $data = [];
