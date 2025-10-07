@@ -80,6 +80,7 @@ const getFilterValues = root => {
         customfieldvalue: courseRegion.attr('data-customfieldvalue'),
         yeardata: courseRegion.attr('data-year'),
         progress: courseRegion.attr('data-progress'),
+        catdata: courseRegion.attr('data-category'),
     };
 };
 
@@ -107,7 +108,8 @@ const getMyCourses = (filters, limit) => {
         customfieldname: filters.customfieldname,
         customfieldvalue: filters.customfieldvalue,
         yeardata: filters.yeardata,
-        progress: filters.progress
+        progress: filters.progress,
+        catdata: filters.catdata
     });
 };
 
@@ -129,7 +131,8 @@ const getSearchMyCourses = (filters, limit, searchValue) => {
         customfieldvalue: filters.customfieldvalue,
         searchvalue: searchValue,
         yeardata: filters.yeardata,
-        progress: filters.progress
+        progress: filters.progress,
+        catdata: filters.catdata
     });
 };
 
@@ -557,6 +560,7 @@ const itemsPerPageFunc = (pagingLimit, root) => {
         // use these filters if we have more than 1000 courses enrolled.
         $('#yeardropdown').addClass('d-none');
         $('#progressdropdown').addClass('d-none');
+        $('#catdropdown').addClass('d-none');
     }
     return itemsPerPage.filter(pagingOption => {
         if (pagingOption.value === 0 && totalCourseCount > 100) {
@@ -693,9 +697,11 @@ const initializePagedContent = (root, promiseFunction, inputValue = null) => {
     // filters will be applied only to the first 24 courses in case that the pagination is selected to 24 and so on.
     const additionalFilters = getFilterValues(root);
     let yearFilterData = additionalFilters.yeardata;
+    let catFilterData = additionalFilters.catdata;
     let progressFilterData = additionalFilters.progress;
     if ((yearFilterData != undefined && yearFilterData != "all") ||
-        (progressFilterData != undefined && progressFilterData != "all")) {
+        (progressFilterData != undefined && progressFilterData != "all")  ||
+        (catFilterData != undefined && catFilterData != "all")) {
         itemsPerPage = {
             value: 0,
             active: true

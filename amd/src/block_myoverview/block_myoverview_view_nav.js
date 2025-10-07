@@ -46,7 +46,9 @@ const updatePreferences = (filter, value) => {
         type = 'snap_my_courses_year_user_preference';
     } else if (filter === 'progress') {
         type = 'snap_my_courses_progress_user_preference';
-    } else {
+    } else if (filter === 'category') {
+        type = 'snap_my_courses_category_user_preference';
+    }  else {
         type = 'block_myoverview_user_grouping_preference';
     }
 
