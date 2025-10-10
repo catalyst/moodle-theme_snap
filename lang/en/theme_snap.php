@@ -494,7 +494,6 @@ $string['coverimagesettingswarning'] = 'If you update the cover image directly f
 $string['opens'] = 'Opens {$a}';
 $string['opened'] = 'Opened {$a}';
 $string['year'] = 'Year';
-$string['category'] = 'Categorie';
 $string['homepage'] = 'Homepage';
 $string['allyears'] = 'All years';
 $string['allcat'] = 'All Categories';
