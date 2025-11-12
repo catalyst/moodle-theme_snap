@@ -191,7 +191,6 @@ export default class SharingCartForSnap {
      */
     add_backup_command = ($activity, iconBackup, on_backup) => {
         var $menu = $activity.find("ul[role='menu']");
-
         if($menu.length)
         {
             var li = $menu.find('li').first().clone();
@@ -264,6 +263,7 @@ export default class SharingCartForSnap {
         const iconBackup = input.iconBackup;
         const on_section_backup = input.on_section_backup;
         const on_backup = input.on_backup;
+        const lazy = input.lazy;
         const _this = this;
 
         if(course.is_frontpage)
@@ -292,20 +292,67 @@ export default class SharingCartForSnap {
                     $('.block_site_main_menu .content > ul >  li').data("block-sharing-cart", "done");
                 }
             }
-        }
-        else
-        {
-            if($('.course-content li.activity').length > 0)
-            {
+        } else {
+            if ($('.course-content li.activity').length > 0) {
                 var valid = $('.course-content li.activity').data('block-sharing-cart');
-                if(valid !== 'done' || this.courseSections.length == 1)
-                {
-                    $('.course-content li.activity').each(function()
-                    {
+                if (valid !== 'done' || this.courseSections.length == 1) {
+                    $('.course-content li.activity').each(function () {
                         _this.add_backup_command($(this), iconBackup, on_backup);
                     });
                     $('.course-content li.activity').data("block-sharing-cart", "done");
                 }
+            }
+            if (lazy == 1) {
+                const target = document.querySelector('.course-content');
+                if (!target) {
+                    return;
+                }
+                var urlParams = location.hash.split("&"),
+                    section = urlParams[0],
+                    mod = urlParams[1] || null;
+                const observer = new MutationObserver((mutations, obs) => {
+                    const newActivities = document.querySelectorAll('.course-content ' + section + ' li.activity');
+                    if (newActivities.length > 0) {
+                        setTimeout(function () {
+                            var valid = $('.course-content ' + section + ' li.activity').data('block-sharing-cart');
+                            if (valid !== 'done') {
+                                $('.course-content ' + section + ' li.activity').each(function () {
+                                    _this.add_backup_command($(this), iconBackup, on_backup);
+                                });
+                            }
+                            $('.course-content ' + section + ' li.activity').data("block-sharing-cart", "done");
+
+                            obs.disconnect(); // Stop watching once done.
+                        }, 1000);
+                    }
+                });
+                observer.observe(target, {childList: true, subtree: true});
+                $(window).on('hashchange', function () {
+                    const target = document.querySelector('.course-content');
+                    if (!target) {
+                        return;
+                    }
+                    var urlParams = location.hash.split("&"),
+                        sectionchange = urlParams[0],
+                        modchange = urlParams[1] || null;
+
+                    const observer = new MutationObserver((mutations, obs) => {
+                        const newActivities = document.querySelectorAll('.course-content ' + sectionchange + ' li.activity');
+                        if (newActivities.length > 0) {
+                            var validchange = $('.course-content ' + sectionchange + ' li.activity').data('block-sharing-cart' + sectionchange);
+
+                            if (validchange !== 'done') {
+                                $('.course-content ' + sectionchange + ' li.activity').each(function () {
+
+                                    _this.add_backup_command($(this), iconBackup, on_backup);
+                                });
+                                $('.course-content ' + sectionchange + ' li.activity').data("block-sharing-cart" + sectionchange, "done");
+                            }
+                            observer.disconnect(); // Stop watching once done.
+                        }
+                    });
+                    observer.observe(target, {childList: true, subtree: true});
+                });
             }
         }
 
