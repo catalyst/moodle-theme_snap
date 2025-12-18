@@ -6972,3 +6972,9 @@ li.section.main {
     display: none;
   }
 }
+
+// This hides TOC chevron for course sections without activities.
+.courseindex-section:not(:has(.courseindex-sectioncontent li)) .courseindex-chevron {
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
