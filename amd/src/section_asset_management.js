@@ -116,7 +116,8 @@ define(
             if (sections) {
                 sections.addEventListener('click', function(e) {
                     const actionLink = e.target.closest(selector);
-                    if (!actionLink) {
+                    if (!actionLink || actionLink.dataset.initialized === "true") {
+                        // Not an action link or already initialized.
                         return; // Do nothing.
                     }
                     let actionName = actionLink.dataset.action;
@@ -125,8 +126,8 @@ define(
                     if (actionName === 'permalink' || actionName === 'update') {
                         return; // Do nothing.
                     }
-                    e.preventDefault();
-                    e.stopPropagation();
+                    // Initialize the reactive component to make available the action.
+                    actionLink.dataset.initialized = "true";
 
                     const reactiveCourseEditor = CourseEditor.getCurrentCourseEditor();
                     // In topics format we need to initialize the reactive component for highlight sections.
@@ -141,19 +142,24 @@ define(
                             }
                         );
                     }
-                    // Init observers for other section and modules actions.
+                    // Init observers for section and activities actions.
                     const actions = new Actions.prototype.constructor({
                         element: actionLink,
                         reactive: reactiveCourseEditor
                     });
                     // Handle the action.
                     if (typeof actions._dispatchClick === 'function') {
-                        actions._dispatchClick(e);
                         if (actionName === "cmDelete") {
                             // If deleting an activity, update toc Searchable for Snap.
                             // We should use reactive components instead.
                             let cmid = actionLink.dataset.id;
                             $('#toc-searchables li[data-id="' + cmid + '"]').remove();
+                        } else if (actionName === "newModule") {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            // For subsections creation we need to call the _dispatchClick manually always.
+                            actionLink.dataset.initialized = "false";
+                            actions._dispatchClick(e);
                         }
                     }
                 }, {capture: true});

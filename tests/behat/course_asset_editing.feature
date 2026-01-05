@@ -79,9 +79,13 @@ Feature: When the moodle theme is set to Snap, teachers edit assets without ente
     And I should see "Test assignment"
     And I open "Test assignment" actions menu
     And I choose "Hide" in the open action menu
+    # Perform an action should close the menu.
+    And ".dropdown-menu.menu.show" "css_element" should not exist
     And I should see "Hidden from students" in the "Test assignment" "activity"
     And I open "Test assignment" actions menu
     And I choose "Show" in the open action menu
+    # Perform an action should close the menu.
+    And ".dropdown-menu.menu.show" "css_element" should not exist
     Then I should not see "Hidden from students" in the "Test assignment" "activity"
 
   @javascript
@@ -97,11 +101,15 @@ Feature: When the moodle theme is set to Snap, teachers edit assets without ente
     And I switch edit mode in Snap
     And I open "test text file" actions menu
     And I choose "Hide" in the open action menu
+    # Perform an action should close the menu.
+    And ".dropdown-menu.menu.show" "css_element" should not exist
     And I should see "Hidden from students" in the "test text file" "activity"
     # This is to test that the change persists.
     And I reload the page
     And I open "test text file" actions menu
     And I choose "Show" in the open action menu
+    # Perform an action should close the menu.
+    And ".dropdown-menu.menu.show" "css_element" should not exist
     And I should not see "Hidden from students" in the "test text file" "activity"
     # This is to test that the change persists.
     And I reload the page
@@ -117,6 +125,9 @@ Feature: When the moodle theme is set to Snap, teachers edit assets without ente
     And I follow "Section 1"
     And I open "Test assignment" actions menu
     And I choose "Duplicate" in the open action menu
+    # Perform an action should close the menu.
+    And ".dropdown-menu.menu.show" "css_element" should not exist
+    And I should not see "Duplicate"
     And I should see "Test assignment (copy)"
     # This is to test that the duplication persists.
     And I reload the page
@@ -134,6 +145,8 @@ Feature: When the moodle theme is set to Snap, teachers edit assets without ente
     And I switch edit mode in Snap
     And I open "test text file" actions menu
     And I choose "Duplicate" in the open action menu
+    # Perform an action should close the menu.
+    And ".dropdown-menu.menu.show" "css_element" should not exist
     And I should see "test text file (copy)"
         # This is to test that the duplication persists.
     And I reload the page
@@ -153,6 +166,8 @@ Feature: When the moodle theme is set to Snap, teachers edit assets without ente
     And I switch edit mode in Snap
     And I open "Test assignment" actions menu
     And I choose "Copy to Sharing Cart" in the open action menu
+    # Perform an action should close the menu.
+    And ".dropdown-menu.menu.show" "css_element" should not exist
     Then I should see "Are you sure you want to copy this"
     And I log out
     And I log in as "student1"
@@ -171,6 +186,8 @@ Feature: When the moodle theme is set to Snap, teachers edit assets without ente
     And I switch edit mode in Snap
     And I open "Assignment1" actions menu
     And I choose "Duplicate" in the open action menu
+    # Perform an action should close the menu.
+    And ".dropdown-menu.menu.show" "css_element" should not exist
     And I should see "Assignment1 (copy)"
 
   @javascript
