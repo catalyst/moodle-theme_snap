@@ -26,6 +26,8 @@ defined('MOODLE_INTERNAL') || die();
 
 require(__DIR__.'/header.php');
 
+$iscoursecat = $PAGE->context->contextlevel == CONTEXT_COURSECAT;
+
 // @codingStandardsIgnoreStart
 // Note, coding standards ignore is required so that we can have more readable indentation under php tags.
 
@@ -45,52 +47,19 @@ if (!empty($coverimagecss)) {
         <div id="moodle-page" class="clearfix">
         <div id="page-header" class="clearfix snap-category-header <?php echo $mastimage; ?>">
         <nav class="breadcrumb-nav" aria-label="breadcrumbs"><?php echo $OUTPUT->navbar(); ?></nav>
-            <div id="page-mast">
             <?php
-                $categories = $PAGE->categories;
-                if (empty($categories)) {
-                    $catname = get_string('courses', 'theme_snap');
-                    $catname = format_text($catname);
-                    echo '<h1>' . html_to_text(s($catname)) . '</h1>';
-                } else {
-                    // Get the current category name and description.
-                    $cat = reset($categories);
-                    $catid = $cat->id;
-                    $catname = format_text($cat->name);
-                    $catdescription = $cat->description;
+            $categories = $PAGE->categories;
+            $cat = reset($categories);
+            if (!empty($categories)) {
+                $cat = reset($categories);
+            }
+            $manageurl = false;
+            if (has_capability('moodle/category:manage', $PAGE->context)) {
+                $manageurl = new \core\url('/course/management.php');
+            }
 
-                    // Category edit link.
-                    $editcatagory = '';
-                    if (can_edit_in_category($catid)) {
-                        $editurl = new \core\url('/course/editcategory.php', ['id' => $catid]);
-                        $editcatagory = '<div class="ms-3"><a href=" '.$editurl.' " class="btn btn-secondary">'
-                                .get_string('categoryedit', 'theme_snap').'</a></div>';
-                    }
-
-                    // Category summary.
-                    $catsummary = '';
-                    if ($catdescription) {
-                        $content = context_coursecat::instance($cat->id);
-                        $catdescription = file_rewrite_pluginfile_urls($catdescription,
-                            'pluginfile.php', $content->id, 'coursecat', 'description', null);
-                        $options = array('noclean' => true, 'overflowdiv' => false);
-                        $catsummary = '<div class="snap-category-description">'
-                            .format_text($catdescription, $cat->descriptionformat, $options).'</div>';
-                    }
-                    echo '<h1>' . html_to_text(s($catname)) . '</h1>';
-                    echo $catsummary;
-                }
-
-                $iscoursecat = $PAGE->context->contextlevel === CONTEXT_COURSECAT;
-                $manageurl = false;
-                if (has_capability('moodle/category:manage', $PAGE->context)) {
-                    $manageurl = new \core\url('/course/management.php');
-                    if ($iscoursecat) {
-                        echo $OUTPUT->cover_image_selector() ;
-                    }
-                }
-                ?>
-            </div>
+            echo $OUTPUT->snap_page_header();
+            ?>
         </div>
         <section id="region-main">
             <div class="d-inline-flex">

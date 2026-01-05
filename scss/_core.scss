@@ -1784,8 +1784,10 @@ body.path-course #moodle-page #page-header {
   .breadcrumb {
       background-color: transparent;
       padding: 0;
-      font-size: $font-size-sm;
+      font-size: 0.65rem;
       display: block;
+      margin-bottom: 0.5rem;
+
       li.breadcrumb-item {
           display: inline-block;
           a {
@@ -5467,9 +5469,10 @@ header#mr-nav {
 }
 
 #page-header.mast-image {
-    min-height: calc(100vw/6);
+    min-height: 0;
+    aspect-ratio: 6;
 }
-@media (min-width: 992px) {
+@media (min-width: 993px) {
     .theme-snap #snap-header {
         height: 100px;
     }
@@ -5489,6 +5492,16 @@ header#mr-nav {
         #page-header {
             margin-top: 150px!important;
         }
+    }
+
+    #page-header.mast-image h1 {
+        font-size: 1.5vw;
+    }
+}
+
+@media (width: 992px) {
+    #page-header {
+        padding-top: 40px !important;
     }
 }
 

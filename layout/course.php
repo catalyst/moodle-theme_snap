@@ -52,11 +52,9 @@ echo $OUTPUT->custom_menu_spacer();
 <div id="page-header" class="clearfix <?php echo $mastimage; ?>">
     <nav class="breadcrumb-nav" aria-label="breadcrumbs"><?php echo $OUTPUT->navbar(); ?></nav>
 
-    <div id="page-mast">
     <?php
     if ($coursemainpage) {
         $output = $PAGE->get_renderer('core', 'course');
-        echo $output->course_format_warning();
     }
     // Allow individual course formats to set their preferred values.
     switch ($COURSE->format) {
@@ -66,12 +64,8 @@ echo $OUTPUT->custom_menu_spacer();
         default:
             break;
     }
-    echo $OUTPUT->page_heading();
-    echo $OUTPUT->course_header();
-    // Note, there is no blacklisting for the edit blocks button on course pages.
-    echo $OUTPUT->page_heading_button();
+    echo $OUTPUT->snap_page_header();
     ?>
-    </div>
 </div>
 <?php
 if ($tocformat) {

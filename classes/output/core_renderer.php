@@ -927,7 +927,7 @@ class core_renderer extends \theme_boost\output\core_renderer {
             $contextheader = new \core\output\context_header($heading, $headinglevel, $imagedata, $userbuttons, $prefix);
             return $this->render($contextheader); // Only context header for course modules.
         } else if ($context->contextlevel == CONTEXT_COURSE) {
-          return parent::context_header($headerinfo, $headinglevel);
+            return '';
         }
         return ''; // Any other case we fall back to the Snap header.
     }
@@ -995,6 +995,111 @@ class core_renderer extends \theme_boost\output\core_renderer {
         return $heading;
     }
 
+
+    /**
+     * Renders the page header.
+     *
+     * @return string
+     */
+    public function snap_page_header() {
+        global $COURSE, $CFG, $SITE, $DB;
+
+        $data = new stdClass();
+        $heading = $this->page->heading;
+        $pagetype = $this->page->pagetype;
+        $context = $this->page->context;
+
+        if ($this->page->pagelayout == 'mypublic' && $COURSE->id == SITEID) {
+            $data->title = parent::context_header();
+        } else if (($COURSE->id != SITEID
+            && (stripos($heading, format_string($COURSE->fullname)) === 0)
+            || $pagetype === 'course-view-section-topics')) {
+            $courseurl = new moodle_url('/course/view.php', ['id' => $COURSE->id]);
+            $heading = format_string($COURSE->fullname);
+            $headinglink = \core\output\html_writer::link($courseurl, $heading);
+            $data->title = \core\output\html_writer::tag('h1', $headinglink);
+        } else {
+            $data->title = \core\output\html_writer::tag('h1', $heading);
+        }
+
+        if ($context->contextlevel == CONTEXT_COURSECAT) {
+            $categories = $this->page->categories;
+            if (empty($categories)) {
+                $catname = get_string('courses', 'theme_snap');
+                $catname = format_text($catname);
+                $data->title = \core\output\html_writer::tag('h1', html_to_text(s($catname)));
+            } else {
+                $cat = reset($categories);
+                $catname = format_text($cat->name);
+                $data->title = \core\output\html_writer::tag('h1', html_to_text(s($catname)));
+
+                if ($cat->description) {
+                    $content = \context_coursecat::instance($cat->id);
+                    $catdescription = file_rewrite_pluginfile_urls($cat->description,
+                        'pluginfile.php', $content->id, 'coursecat', 'description', null);
+                    $options = array('noclean' => true, 'overflowdiv' => false);
+                    $data->summary = format_text($catdescription, $cat->descriptionformat, $options);
+                }
+
+                if (can_edit_in_category($cat->id)) {
+                    $editurl = new \core\url('/course/editcategory.php', ['id' => $cat->id]);
+                    $data->edit_category_button = [
+                        'url' => $editurl->out(),
+                        'text' => get_string('categoryedit', 'theme_snap')
+                    ];
+                }
+            }
+
+            if (has_capability('moodle/category:manage', $context)) {
+                 $data->cover_image_selector = $this->cover_image_selector();
+            }
+        }
+
+        $coursemainpage = strpos($pagetype, 'course-view-') === 0;
+        if ($coursemainpage) {
+             $courseformat = $this->page->get_renderer('core', 'course');
+             $data->course_format_warning = $courseformat->course_format_warning();
+        }
+
+        if ($COURSE->id != SITEID) {
+            $courseviewpage = local::current_url_path() === '/course/view.php';
+            $coursesectionviewpage = local::current_url_path() === '/course/section.php';
+            if ($courseviewpage || $coursesectionviewpage) {
+                $data->cover_image_selector = $this->cover_image_selector();
+            }
+        }
+
+        if ($this->page->pagelayout == 'frontpage') {
+             $data->site_description = format_string($this->page->theme->settings->subtitle);
+             if ($this->page->user_is_editing()) {
+                $url = new moodle_url('/admin/settings.php', ['section' => 'themesettingsnap']);
+                $data->change_fullname_button = [
+                    'url' => $url->out(),
+                    'text' => get_string('changefullname', 'theme_snap')
+                ];
+                if ($pagetype == 'site-index') {
+                    $data->cover_image_selector = $this->cover_image_selector();
+                }
+            }
+        }
+
+        if (strpos($pagetype, 'grade-report-') === 0 || strpos($pagetype, 'grade-edit-') === 0) {
+             $gb_heading = parent::context_header();
+             $data->title = $this->snap_make_coursename_link($gb_heading);
+        }
+
+        $data->course_header = $this->course_header();
+        
+        if ($this->page->pagelayout !== 'admin') {
+            $data->page_heading_button = $this->page_heading_button();
+        }
+
+        if ($pagetype === 'contentbank') {
+            $data->content_bank = $this->snap_content_bank();
+        }
+
+        return $this->render_from_template('theme_snap/page_header', $data);
+    }
 
     public function favicon() {
         // Allow customized favicon from settings.
