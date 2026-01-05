@@ -73,3 +73,13 @@ Feature: Testing course index drawer in theme_snap
     And I click on "#extra-actions-dropdown-1" "css_element"
     And I click on "#section-1 .snap-highlight" "css_element"
     Then I should see "Highlighted" in the "nav#courseindex [data-number='1']" "css_element"
+
+  @javascript
+  Scenario: Chevron is hidden for sections without activities in course index
+    Given I skip because "Currently CSS :has() pseudo-class is not supported in our current behat testing environment."
+    Given I am logged in as "admin"
+    And I am on the course main page for "C1"
+    Then ".courseindex-section[data-number='3'] .courseindex-chevron" "css_element" should not be visible
+    When I click on "#section-3 .section-modchooser-link.btn-add-activity" "css_element"
+    And I add a "Page" to section "3" using the activity chooser
+    Then ".courseindex-section[data-number='3'] .courseindex-chevron" "css_element" should be visible
