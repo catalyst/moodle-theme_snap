@@ -370,5 +370,13 @@ define(
         // Intialise course lib.
         init();
         modchooserSectionLinks();
+
+        // Handle cancel button for add new section form.
+        const cancelBtn = document.getElementById('cancel-new-section');
+        if (cancelBtn) {
+            cancelBtn.addEventListener('click', function() {
+                window.location.hash = '';
+            });
+        }
     };
 });

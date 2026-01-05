@@ -772,10 +772,9 @@ trait format_section_trait {
             'value' => get_string('createsection', 'theme_snap'),
         ));
 
-        $courseurl = new moodle_url('/course/view.php', array('id' => $course->id));
         $message = get_string('cancel');
-        $attr = array('class' => 'btn btn-secondary', 'id' => 'cancel-new-section');
-        $output .= html_writer::link($courseurl, $message, $attr);
+        $attr = array('class' => 'btn btn-secondary', 'id' => 'cancel-new-section', 'type' => 'button');
+        $output .= html_writer::tag('button', $message, $attr);
 
         $output .= html_writer::end_tag('form');
         $output .= '</section>';
