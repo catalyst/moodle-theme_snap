@@ -73,7 +73,7 @@ class ws_course_toc_progressbar extends external_api {
         $course = get_course($courseid);
         $user = \core_user::get_user($userid);
 
-        $data = \theme_snap\output\core_renderer::get_course_completion_data($course, $user);
+        $data = \theme_snap\local::get_course_completion_data($course, $user);
 
         return [
             'courseprogress' => get_string('progress', 'theme_snap').': '. $data['courseprogress'],

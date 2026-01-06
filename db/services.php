@@ -105,4 +105,13 @@ $functions = [
         'loginrequired'   => true,
         'readonlysession' => true, // We don't modify the session.
     ],
+    'theme_snap_get_course_section_progress'                => [
+        'classname'       => 'theme_snap\\webservice\\ws_course_section_progress',
+        'methodname'      => 'service',
+        'description'     => 'Get the completion progress for a course section',
+        'type'            => 'read',
+        'ajax'            => true,
+        'loginrequired'   => true,
+        'readonlysession' => true, // We don't modify the session.
+    ],
 ];

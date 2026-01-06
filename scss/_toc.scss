@@ -404,6 +404,10 @@ label[for="toc-search-input"]{
 }
 
 .courseindex-section {
+    .courseindex-item-content .courseindex-link:not([data-for="section_title"]) {
+      font-size: 0.95rem;
+    }
+
     .courseindex-link {
       display: inline-block !important;
       white-space: nowrap;
@@ -616,7 +620,6 @@ label[for="toc-search-input"]{
       .activityicon {
           width: 18px;
           height: 18px;
-          bottom: 10px;
           position: absolute;
         }
     }
@@ -624,9 +627,6 @@ label[for="toc-search-input"]{
 
 @media (max-width: 768px) {
   #course-index {
-    .completioninfo i.icon {
-      bottom: 0;
-    }
     .activityicon {
       bottom: 6px;
     }
@@ -723,4 +723,40 @@ body.snap_drawer_open {
       color: white;
     }
   }
+}
+// -------------------------
+// Section progress indicator.
+// -------------------------
+.drawer.drawer-left .snap-section-progress-wrapper {
+    background-color: #CACACA;
+    border-radius: 0.5rem;
+    padding: 0.2rem 0.75rem;
+    margin: .3rem 0 .5rem 2rem;
+
+    .snap-section-progress-content {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    .snap-section-progress-text {
+      font-size: 0.9rem;
+      color: #565656;
+      margin: 0;
+    }
+
+    .snap-section-progress-icon {
+      color: #357a32;
+      font-size: 0.9rem;
+      display: none;
+      flex-shrink: 0;
+    }
+
+    &.snap-section-progress-complete {
+        .snap-section-progress-text {
+          color: #357a32;
+        }
+    }
 }

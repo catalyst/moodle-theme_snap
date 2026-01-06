@@ -25,34 +25,6 @@ import snapsection from 'theme_snap/section_asset_management';
 import {getCurrentCourseEditor} from 'core_courseformat/courseeditor';
 
 /**
- * Ensures that all course index links have a title attribute for accessibility.
- *
- * @param {HTMLElement|Document} root - The root node to search for course index links.
- */
-const injectTitles = (root) => {
-    root.querySelectorAll('a.courseindex-link, a.aalink.stretched-link').forEach((link) => {
-        if (!link.hasAttribute('title')) {
-            const text = link.textContent.trim();
-            if (text) {
-                link.setAttribute('title', text);
-            }
-        }
-    });
-};
-
-/**
- * Processes a newly added node by injecting icons and titles if applicable.
- *
- * @param {Node} node - The node added to the DOM.
- */
-const processNode = (node) => {
-    if (node.nodeType !== 1) {
-        return;
-    }
-    injectTitles(node);
-};
-
-/**
  * Get hidden TOC activities list from config.
  * @returns {number[]} Array of hidden course module IDs
  */
@@ -92,7 +64,6 @@ const filterHiddenActivitiesFromDOM = () => {
  * - Observes changes in the course index and applies the same adjustments to new nodes.
  */
 export const init = () => {
-    injectTitles(document);
 
     const reactiveCourseEditor = getCurrentCourseEditor();
 
@@ -100,13 +71,10 @@ export const init = () => {
     if (target) {
         // Filter hidden activities immediately and after DOM changes.
         filterHiddenActivitiesFromDOM();
-        const observer = new MutationObserver((mutations) => {
+        const observer = new MutationObserver(() => {
             let state = reactiveCourseEditor.state;
 
             snapsection.setNavigationObservers();
-            mutations.forEach((m) => {
-                m.addedNodes.forEach(processNode);
-            });
             // Filter hidden activities after DOM mutations.
             filterHiddenActivitiesFromDOM();
             const sections = document.querySelectorAll('#courseindex-content .courseindex-section');

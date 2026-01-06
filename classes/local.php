@@ -2528,4 +2528,124 @@ SQL;
     public static function remove_hidden_courses(array $courses) : array {
         return array_filter($courses, fn($course) => $course->visible);
     }
+
+    /**
+     * Return the course completion progress and course percentage data.
+     * @param stdClass $course The course object
+     * @param stdClass $user The user object
+     * @return array Course completion data
+     */
+    public static function get_course_completion_data($course, $user) {
+        global $CFG;
+        require_once($CFG->libdir . '/completionlib.php');
+
+        $completion = new \completion_info($course);
+        $modules = $completion->get_activities();
+        $count = count($modules);
+        $totalcompleted = $completion->count_modules_completed($user->id);
+        $courseprogress = $totalcompleted.'/'.$count;
+        $progresspercentage = \core_completion\progress::get_course_progress_percentage($course);
+        $hasprogress = false;
+        if ($progresspercentage === 0 || $progresspercentage > 0) {
+            $hasprogress = true;
+        }
+        $progresspercentage = floor($progresspercentage ?? 0);
+        return [
+            'userid' => $user->id,
+            'courseid' => $course->id,
+            'courseprogress' => $courseprogress,
+            'progresspercentage' => $progresspercentage,
+            'hasprogress' => $hasprogress,
+        ];
+    }
+
+    /**
+     * Return the section completion progress data.
+     *
+     * If $sectionid is null or 0, returns data for all sections as an associative array
+     * with sectionid as key. Otherwise, returns data for a single section as a simple array.
+     *
+     * @param stdClass $course The course object
+     * @param stdClass $user The user object
+     * @param int|null $sectionid The section ID (null or 0 for all sections)
+     * @return array Section progress data.
+     */
+    public static function get_section_completion_data($course, $user, $sectionid = null) {
+        global $CFG;
+        require_once($CFG->libdir . '/completionlib.php');
+
+        $completion = new \completion_info($course);
+        $modinfo = get_fast_modinfo($course, $user->id);
+
+        // If course has no progress tracking, return appropriate empty structure.
+        if (!$completion->is_enabled() || !$completion->is_tracked_user($user->id) || empty($completion->get_activities())) {
+            if ($sectionid === null || $sectionid == 0) {
+                return [];
+            }
+            return [
+                'completed' => 0,
+                'total' => 0,
+                'hasprogress' => false,
+                'iscomplete' => false,
+            ];
+        }
+
+        // Helper function to calculate progress for a single section.
+        $calculateSectionProgress = function($section) use ($modinfo, $completion) {
+            if (empty($modinfo->sections[$section->section])) {
+                return [
+                    'completed' => 0,
+                    'total' => 0,
+                    'hasprogress' => false,
+                    'iscomplete' => false,
+                ];
+            }
+
+            $completed = 0;
+            $total = 0;
+
+            foreach ($modinfo->sections[$section->section] as $cmid) {
+                $cm = $modinfo->get_cm($cmid);
+                if ($cm->uservisible && !$cm->deletioninprogress && $completion->is_enabled($cm) != COMPLETION_TRACKING_NONE) {
+                    $total++;
+                    $completiondata = $completion->get_data($cm, false);
+                    if ($completiondata->completionstate == COMPLETION_COMPLETE ||
+                        $completiondata->completionstate == COMPLETION_COMPLETE_PASS) {
+                        $completed++;
+                    }
+                }
+            }
+
+            $hasprogress = $total > 0;
+            $iscomplete = $hasprogress && $completed == $total;
+
+            return [
+                'completed' => $completed,
+                'total' => $total,
+                'hasprogress' => $hasprogress,
+                'iscomplete' => $iscomplete,
+            ];
+        };
+
+        // If sectionid is null or 0, return all sections.
+        if ($sectionid === null || $sectionid == 0) {
+            $sectionsdata = [];
+            foreach ($modinfo->get_section_info_all() as $section) {
+                $sectionsdata[$section->id] = $calculateSectionProgress($section);
+            }
+            return $sectionsdata;
+        }
+
+        $section = $modinfo->get_section_info_by_id($sectionid);
+        if (!$section) {
+            return [
+                'completed' => 0,
+                'total' => 0,
+                'hasprogress' => false,
+                'iscomplete' => false,
+            ];
+        }
+
+        return $calculateSectionProgress($section);
+    }
 }

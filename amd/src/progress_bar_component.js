@@ -22,7 +22,8 @@
 
 import {BaseComponent} from 'core/reactive';
 import {getCurrentCourseEditor} from 'core_courseformat/courseeditor';
-import Ajax from "../../../../lib/amd/src/ajax";
+import {updateCourseTocProgressBar} from './repository';
+import log from 'core/log';
 
 export default class extends BaseComponent {
 
@@ -78,13 +79,8 @@ export default class extends BaseComponent {
      */
     updateProgressBarValues() {
         const selectors = this.selectors;
-        Ajax.call([{
-            methodname: 'theme_snap_update_course_toc_progressbar',
-            args: {
-                userid: this.userid,
-                courseid: this.courseid,
-            },
-            done: function(response) {
+        updateCourseTocProgressBar(this.userid, this.courseid)
+            .then((response) => {
                 document.getElementById(selectors.COURSE_PROGRESS)
                     .textContent = response.courseprogress;
                 document.getElementById(selectors.PROGRESS_PERCENTAGE)
@@ -93,7 +89,9 @@ export default class extends BaseComponent {
                     .setAttribute('aria-valuenow', response.progresspercentage);
                 document.querySelector(selectors.PROGRESS_BAR)
                     .style.width = `${response.progresspercentage}%`;
-            }
-        }]);
+            })
+            .catch((error) => {
+                log.warn('Failed to update progress bar:', error);
+            });
     }
 }

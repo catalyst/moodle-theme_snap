@@ -74,7 +74,7 @@ $tocfooter = $OUTPUT->render_from_template('theme_snap/course_toc_footer', $foot
 
 // Add progressbar to course Index.
 $progressbar = $OUTPUT->render_from_template('theme_snap/course_toc_progress_bar',
-    $OUTPUT->get_course_completion_data($COURSE, $USER));
+    \theme_snap\local::get_course_completion_data($COURSE, $USER));
 
 $courseindex = $searchmodule . $progressbar . core_course_drawer() . $tocfooter;
 
