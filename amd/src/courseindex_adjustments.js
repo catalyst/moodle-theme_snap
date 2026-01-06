@@ -21,8 +21,8 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-import ajax from "core/ajax";
 import snapsection from 'theme_snap/section_asset_management';
+import {getCurrentCourseEditor} from 'core_courseformat/courseeditor';
 
 /**
  * Ensures that all course index links have a title attribute for accessibility.
@@ -85,17 +85,6 @@ const filterHiddenActivitiesFromDOM = () => {
     });
 };
 
-const getCourseState = async() => {
-
-    const courseStateData = await ajax.call([{
-        methodname: 'core_courseformat_get_state',
-        args: {
-            courseid: M.cfg.courseId,
-        }
-    }])[0];
-    return JSON.parse(courseStateData);
-};
-
 /**
  * Initializes the course index adjustments.
  *
@@ -105,34 +94,37 @@ const getCourseState = async() => {
 export const init = () => {
     injectTitles(document);
 
+    const reactiveCourseEditor = getCurrentCourseEditor();
+
     const target = document.querySelector('#courseindex');
     if (target) {
         // Filter hidden activities immediately and after DOM changes.
         filterHiddenActivitiesFromDOM();
         const observer = new MutationObserver((mutations) => {
+            let state = reactiveCourseEditor.state;
+
             snapsection.setNavigationObservers();
             mutations.forEach((m) => {
                 m.addedNodes.forEach(processNode);
             });
             // Filter hidden activities after DOM mutations.
             filterHiddenActivitiesFromDOM();
-            getCourseState().then(courseState => {
-                const sections = document.querySelectorAll('#courseindex-content .courseindex-section');
-                const currentSectionId = courseState.section.filter(el => el.current)[0]?.id;
-                sections.forEach(section => {
-                    if (currentSectionId === section.dataset.id) {
-                        section.classList.add('current');
-                        if (document.querySelector('body:not(.path-course-view-section)')) {
-                            section.querySelector('.courseindex-item').classList.add('pageitem');
-                        }
-                    } else {
-                        section.classList.remove('current');
-                        if (document.querySelector('body:not(.path-course-view-section)')) {
-                            section.querySelector('.courseindex-item').classList.remove('pageitem');
-                        }
+            const sections = document.querySelectorAll('#courseindex-content .courseindex-section');
+            const currentSectionId = [...state.section.values()].find(el => el.current)?.id;
+            sections.forEach(section => {
+                if (currentSectionId === section.dataset.id) {
+                    section.classList.add('current');
+                    if (document.querySelector('body:not(.path-course-view-section)')) {
+                        section.querySelector('.courseindex-item').classList.add('pageitem');
                     }
-                });
+                } else {
+                    section.classList.remove('current');
+                    if (document.querySelector('body:not(.path-course-view-section)')) {
+                        section.querySelector('.courseindex-item').classList.remove('pageitem');
+                    }
+                }
             });
+
             const sectionsInView = document.querySelectorAll('body:not(.path-course-view-section)' +
                 ' #courseindex-content .courseindex-section');
             sectionsInView.forEach((section) => {
