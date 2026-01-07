@@ -37,8 +37,7 @@ define([], function() {
         } else if (
             item.classList.contains('modtype_url') ||
             item.classList.contains('modtype_imscp') ||
-            item.classList.contains('modtype_lightboxgallery') ||
-            item.classList.contains('modtype_scorm')
+            item.classList.contains('modtype_lightboxgallery')
         ) {
             return true;
         }

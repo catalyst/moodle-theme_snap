@@ -1740,14 +1740,13 @@ body.snap-resource-list {
 // -----------------------------------------------------------
 
 // If you modify this mixin’s selectors, also update
-// isResourceCardType() in snap.js to keep the logic in sync.
+// isResourceCardType() in activity_cards.js to keep the logic in sync.
 @mixin snap-resource-card-selectors {
   li.activity-wrapper.modtype_resource:not(:has(.snap-resource-figure)),
   li.activity-wrapper.modtype_folder:has(.activity-name-area),
   li.activity-wrapper.modtype_url,
   li.activity-wrapper.modtype_imscp,
-  li.activity-wrapper.modtype_lightboxgallery,
-  li.activity-wrapper.modtype_scorm {
+  li.activity-wrapper.modtype_lightboxgallery {
     @content;
   }
 }
