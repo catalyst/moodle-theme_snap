@@ -299,6 +299,7 @@ li.section:focus {
         margin: unset;
         padding: unset;
         li {
+            margin-inline: 0;
             list-style: none;
         }
     }
@@ -428,7 +429,7 @@ li.section:focus {
             display: block;
             border-radius: initial;
             text-align: left;
-            width: auto;
+            width: 100%;
             height: auto;
             padding: 0.5em;
 
