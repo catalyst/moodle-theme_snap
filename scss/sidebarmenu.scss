@@ -208,6 +208,27 @@ $mobile-sidebar-peek-width: 10px;
     }
 }
 
+[dir="rtl"] {
+    .snap-sidebar-menu {
+        &::before {
+            transform: translateX(50%);
+        }
+    }
+
+    .snap-sidebar-menu-item {
+
+        &::after {
+            transform: translateX(50%);
+        }
+
+        .active {
+            &::after {
+                transform: translateX(50%);
+            }
+        }
+    }
+}
+
 // Animation for the active indicator
 .snap-sidebar-menu-item {
     position: relative;
