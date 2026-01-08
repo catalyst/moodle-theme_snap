@@ -45,6 +45,7 @@ Feature: When the moodle theme is set to Snap, teachers can toggle the currently
     And I click on "#extra-actions-dropdown-1" "css_element"
     And I click on "#section-1 .snap-highlight" "css_element"
     And I wait until "#section-1 .snap-highlight" "css_element" exists
+    And I click on "#extra-actions-dropdown-1" "css_element"
     And I should see "Unhighlight"
     When I click on "#courseindexsection2 .courseindex-link[data-action='togglecourseindexsection']" "css_element"
     Then "#section-2" "css_element" should exist
@@ -116,6 +117,7 @@ Feature: When the moodle theme is set to Snap, teachers can toggle the currently
       And I click on "#section-1 .snap-highlight" "css_element"
       And I wait until "#section-1 .snap-highlight" "css_element" exists
       And "#extra-actions-dropdown-1" "css_element" should exist
+      And I click on "#extra-actions-dropdown-1" "css_element"
       And I click on "#section-1 .snap-delete" "css_element"
       Then I should not see "Highlighted"
       And I follow "Create a new section"
