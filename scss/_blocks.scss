@@ -113,6 +113,12 @@ body.path-site .block.block_settings {
     margin-bottom: 1em;
 }
 
+[dir="rtl"] .block.block_settings {
+    li {
+        display: block;
+    }
+}
+
 /* Reset margin on setting block. */
 .block_settings {
     > .card-body {
