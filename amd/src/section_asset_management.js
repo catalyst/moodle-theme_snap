@@ -221,9 +221,9 @@ define(
                 $('.sk-fading-circle').show();
                 // We need to prevent the DOM to show the default section.
                 $('.course-content .' + self.courseConfig.format + 'ul.sections > li[id^="section-"]').hide();
-                fragment.loadFragment('theme_snap', 'section', self.courseConfig.contextid, params).done(function(html, js) {
+                fragment.loadFragment('theme_snap', 'section', self.courseConfig.contextid, params).done(function(html) {
                     var node = $(html);
-                    renderSection(section, node, mod, js);
+                    renderSection(section, node, mod);
 
                     var folders = node.find('li.snap-activity.modtype_folder');
                     $.each(folders, function (index, folder) {
@@ -315,9 +315,8 @@ define(
          * @param {string} section
          * @param {node} html
          * @param {string} mod
-         * @param {string} js
          */
-        var renderSection = function(section, html, mod, js) {
+        var renderSection = function(section, html, mod) {
             var anchor = $('.course-content');
             var existingSections = [];
             anchor.find('ul.sections>li[id^=section-]').each(function() {
@@ -341,7 +340,6 @@ define(
             } else {
                 $('.sk-fading-circle').after(tempnode);
             }
-            templates.runTemplateJS(js);
 
             // Hide loading animation.
             $('.sk-fading-circle').hide();
