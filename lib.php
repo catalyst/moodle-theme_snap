@@ -588,9 +588,15 @@ function theme_snap_user_preferences(): array {
  *
  * @param moodleform_mod $formwrapper The form wrapper instance
  * @param MoodleQuickForm $mform The form instance
+ *
+ * @throws coding_exception
  */
-function theme_snap_coursemodule_standard_elements($formwrapper, $mform) {
+function theme_snap_coursemodule_standard_elements(moodleform_mod $formwrapper, MoodleQuickForm $mform): void {
+    global $CFG;
 
+    if ($CFG->theme !== 'snap') {
+        return;
+    }
     // Snap-specific settings header.
     $mform->addElement('header', 'snap_toc_settings',get_string('snap_toc_settings', 'theme_snap'));
 
@@ -607,9 +613,15 @@ function theme_snap_coursemodule_standard_elements($formwrapper, $mform) {
  *
  * @param moodleform_mod $formwrapper The form wrapper instance
  * @param MoodleQuickForm $mform The form instance
+ *
+ * @throws dml_exception
  */
-function theme_snap_coursemodule_definition_after_data($formwrapper, $mform) {
-    global $DB;
+function theme_snap_coursemodule_definition_after_data(moodleform_mod $formwrapper, MoodleQuickForm $mform): void {
+    global $CFG, $DB;
+
+    if ($CFG->theme !== 'snap') {
+        return;
+    }
 
     // Only apply when editing an existing module.
     $cm = $formwrapper->get_coursemodule();
@@ -623,18 +635,26 @@ function theme_snap_coursemodule_definition_after_data($formwrapper, $mform) {
         ['cmid' => $cm->id]
     );
 
-    $mform->setDefault('snap_hide_in_toc', $hidden);
+    if ($mform->elementExists('snap_hide_in_toc') && !$mform->isSubmitted()) {
+        $mform->setDefault('snap_hide_in_toc', $hidden);
+    }
 }
 
 /**
- * Save or delete the hide-in-TOC setting when a module is created or updated..
+ * Save or delete the hide-in-TOC setting when a module is created or updated.
  *
  * @param stdClass $moduleinfo The module info object
  * @param stdClass $course The course object
+ *
  * @return stdClass The moduleinfo object (unchanged)
+ * @throws dml_exception
  */
-function theme_snap_coursemodule_edit_post_actions($moduleinfo, $course) {
-    global $DB;
+function theme_snap_coursemodule_edit_post_actions(stdClass $moduleinfo, stdClass $course): stdClass {
+    global $CFG, $DB;
+
+    if ($CFG->theme !== 'snap') {
+        return $moduleinfo;
+    }
 
     $cmid = $moduleinfo->coursemodule ?? 0;
     if (!$cmid) {
