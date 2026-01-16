@@ -1551,6 +1551,11 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
                 }
             }
         }
+
+        #page-header.mast-image h1 a {
+            color: $brand-primary;
+            text-shadow: none;
+        }
     }
 
     #tertiary-navigation {
