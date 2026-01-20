@@ -1618,12 +1618,22 @@ class activity {
         $tmparr = [];
         foreach ($retobj->events as $event) {
 
-            // Validation added to prevent array offset.
-            $courseid = array_key_exists($event->courseid, $courses) ? $courses[$event->courseid] : 0;
+            // Skip events from courses not in the $courses array.
+            if (!array_key_exists($event->courseid, $courses)) {
+                continue;
+            }
 
-            [$course, $cminfo] = get_course_and_cm_from_instance(
-                    $event->instance, $event->modulename,  $courseid, $event->userid);
-            unset($course);
+            // Validation added to prevent array offset.
+            $courseid = $courses[$event->courseid];
+
+            try {
+                [$course, $cminfo] = get_course_and_cm_from_instance(
+                        $event->instance, $event->modulename,  $courseid, $event->userid);
+                unset($course);
+            } catch (\moodle_exception $e) {
+                // Skip events that reference non-existent or invalid module instances.
+                continue;
+            }
 
             // We are only interested in modules with valid instances.
             if (empty($cminfo)) {
