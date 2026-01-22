@@ -387,6 +387,93 @@ define(['jquery', 'core/str', 'core/event', 'core_form/events', 'theme_boost/boo
                         document.addEventListener('keydown', drawerTabListener);
                     }
                     setDrawersTabOrder();
+
+                    // Local accessibility plugin button from Snap header
+                    const accessibilityIcon = document.getElementById('local-accessibility-buttoncontainer');
+                    const headerButtonsContainer = document.querySelector('#snap-header > div.float-end');
+                    if (accessibilityIcon && headerButtonsContainer.querySelector('.usermenu')) {
+                        const lineSeparator = document.querySelector('#snap-header div.snap_line_separator');
+                        const accessibilityWrapper = document.createElement('div');
+                        accessibilityWrapper.id = 'nav-local-accessibility-popover-container';
+                        const accessibilityPanel = document.querySelector('div.local-accessibility-panel');
+                        accessibilityPanel.classList.remove('border-primary');
+                        accessibilityPanel.classList.remove('card');
+                        accessibilityIcon.querySelector('button').addEventListener('focus', () => {
+                            accessibilityWrapper.classList.add('focused-icon');
+                        });
+                        accessibilityIcon.querySelector('button').addEventListener('blur', () => {
+                            accessibilityWrapper.classList.remove('focused-icon');
+                        });
+                        const userMenuLink = document.querySelector('.usermenu a');
+                        if (userMenuLink) {
+                            userMenuLink.addEventListener('click', () => {
+                                accessibilityPanel.style.display = 'none';
+                            });
+                        }
+
+                        if (lineSeparator) {
+                            lineSeparator.parentElement.insertBefore(accessibilityWrapper, lineSeparator);
+                        } else {
+                            headerButtonsContainer.insertBefore(accessibilityWrapper, lineSeparator);
+                        }
+                        accessibilityWrapper.appendChild(accessibilityIcon);
+                        accessibilityWrapper.appendChild(accessibilityPanel);
+
+                        let animationTimeout = null;
+                        let isClosingAnim = false;
+
+                        /**
+                         * Handles opening animation for accessibility panel.
+                         */
+                        const handlePanelOpen = () => {
+                            // Clear any pending close animations
+                            if (animationTimeout) {
+                                clearTimeout(animationTimeout);
+                                animationTimeout = null;
+                            }
+
+                            accessibilityPanel.style.display = 'block';
+                            requestAnimationFrame(() => {
+                                accessibilityPanel.classList.add('is-visible');
+                            });
+                        };
+
+                        /**
+                         * Handles closing animation for accessibility panel.
+                         */
+                        const handlePanelClose = () => {
+                            if (isClosingAnim) {
+                                return;
+                            }
+                            isClosingAnim = true;
+                            accessibilityPanel.style.display = 'block';
+
+                            requestAnimationFrame(() => {
+                                accessibilityPanel.classList.remove('is-visible');
+                                animationTimeout = setTimeout(() => {
+                                    if (isClosingAnim && !accessibilityPanel.classList.contains('is-visible')) {
+                                        accessibilityPanel.style.display = 'none';
+                                    }
+                                    isClosingAnim = false;
+                                    animationTimeout = null;
+                                }, 300);
+                            });
+                        };
+
+                        // Required to apply the required transition in the Snap header
+                        const observer = new MutationObserver(() => {
+                            const isDisplayed = window.getComputedStyle(accessibilityPanel).display !== 'none';
+                            const isVisible = accessibilityPanel.classList.contains('is-visible');
+                            if (isDisplayed && !isVisible) {
+                                handlePanelOpen();
+                            }
+                            if (!isDisplayed && isVisible) {
+                                handlePanelClose();
+                            }
+                        });
+
+                        observer.observe(accessibilityPanel, {attributes: true, attributeFilter: ['style']});
+                    }
                 });
 
                 /**
@@ -485,76 +572,6 @@ define(['jquery', 'core/str', 'core/event', 'core_form/events', 'theme_boost/boo
                     var $oldTab = this.$tpanel.find('.tab.active');
                     this.switchTabs($oldTab, $tab);
                 };
-            },
-
-            /**
-             * Custom form error event handler to manipulate the bootstrap markup and show
-             * nicely styled errors in an mform focusing the necessary elements in the form.
-             * @param {string} elementid
-             */
-            enhanceform: function(elementid) {
-                const element = document.getElementById(elementid);
-                if (!element) {
-                    return;
-                }
-
-                element.addEventListener(FormEvents.eventTypes.formFieldValidationFailed, function(event) {
-                    event.preventDefault();
-                    const msg = event.detail?.message || '';
-
-                    const parent = element.closest('.form-group');
-                    if (!parent) {
-                        return;
-                    }
-                    const feedback = parent.querySelector('.form-control-feedback');
-                    const invalidInput = parent.querySelector('input.form-control.is-invalid');
-
-                    let activeElement = element;
-
-                    // Sometimes (atto) we have a hidden textarea backed by a real contenteditable div.
-                    if (element.tagName === 'TEXTAREA') {
-                        const contentEditable = parent.querySelector('[contenteditable]');
-                        if (contentEditable) {
-                            activeElement = contentEditable;
-                        }
-                    }
-
-                    if (msg !== '') {
-                        parent.classList.add('has-danger');
-                        parent.dataset.clientValidationError = "true";
-                        activeElement.classList.add('is-invalid');
-
-                        if (feedback) {
-                            activeElement.setAttribute('aria-describedby', feedback.id);
-                            activeElement.setAttribute('aria-invalid', 'true');
-                            if (invalidInput) {
-                                invalidInput.setAttribute('tabindex', '0');
-                            }
-                            feedback.innerHTML = msg;
-
-                            // Only focus if there is no other element with focus error already.
-                            if (!document.querySelector('[data-error-focused="true"]')) {
-                                activeElement.setAttribute('data-error-focused', 'true');
-                                setTimeout(function() {
-                                    activeElement.focus();
-                                    activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                }, 0);
-                            }
-                        }
-                    } else {
-                        if (parent.dataset.clientValidationError === "true") {
-                            parent.classList.remove('has-danger');
-                            delete parent.dataset.clientValidationError;
-                            activeElement.classList.remove('is-invalid');
-                            activeElement.removeAttribute('aria-describedby');
-                            activeElement.setAttribute('aria-invalid', 'false');
-
-                            if (feedback) {
-                                feedback.style.display = 'none';
-                            }
-                        }
-                    }
-                });
             },
 
             /**

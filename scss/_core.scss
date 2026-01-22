@@ -504,7 +504,7 @@ body:not(.snap-js-loaded) .js-only {
     }
 
     100% {
-        transform: matrix(1, 0, 0, 1, 0, -600);
+        transform: matrix(1, 0, 0, 1, 0, -785);
     }
 }
 
@@ -1655,6 +1655,9 @@ body.contains-snap-custom_menu-spacer {
         @include media-breakpoint-up(md) {
             margin-top: -.75em;
         }
+        @include media-breakpoint-down(sm) {
+            margin-top: -1.5em;
+        }
     }
 }
 
@@ -1684,6 +1687,7 @@ body.contains-snap-custom_menu-spacer {
     max-width: 100%;
 }
 
+#page-blocks-conduit-view #region-main,
 #page-course-reset #region-main {
     max-width: 100%;
 }
@@ -1739,6 +1743,29 @@ header#page-header
     @media (max-width: 465px) {
         padding-top: 7.5rem;
     }
+}
+
+body#page-site-index #moodle-page #page-header {
+    aspect-ratio: 3;
+    #page-mast {
+        margin: 0;
+        position: relative;
+        top: 17%;
+        left: 4%;
+    }
+}
+
+body.path-course-view, body#page-course-index-category {
+    #moodle-page #page-header {
+        min-height: 0;
+        aspect-ratio: 6;
+    }
+    .page-context-header {
+        margin-top: -.75rem;
+    }
+}
+body.path-course-view #moodle-page #page-header:not(.has-course-leftnav){
+  aspect-ratio: unset;
 }
 
 // Breadcrumb - not really a breadcrumb like on the web, but something moodley
@@ -1912,8 +1939,6 @@ header#page-header
 
     #page-header,
     .carousel-slide {
-        // background-color: $brand-primary; customisable
-        min-height: 405px;
         position: relative;
         padding: 0;
         margin: 0;
@@ -1931,15 +1956,6 @@ header#page-header
         padding: 1em 2%;
         margin: 10em 4% 1em;
         word-break: break-word;
-    }
-}
-
-@include media-breakpoint-up(lg) {
-    #page-site-index {
-        #page-header,
-        .carousel-slide {
-            min-height: 600px;
-        }
     }
 }
 
@@ -2945,6 +2961,7 @@ ul.events-new + ul.events-underway {
     border-bottom: 1px solid $gray;
     padding: 1.5em 0;
     margin: 1em 0;
+    display: block;
 }
 
 .que .info,
@@ -3442,11 +3459,7 @@ table#user-grades tr.avg td.cell {
     display:none;
 }
 
-// TODO short term fix for Snap disappearing header interfering with scrolling Gradebook
 #page-grade-report-grader-index {
-    header#mr-nav {
-        animation-name: none;
-    }
     section#region-main {
         display: grid;
     }
@@ -3481,6 +3494,9 @@ table#user-grades tr.avg td.cell {
         tr {
             white-space: normal;
         }
+    }
+    #region-main .tertiary-navigation .navitem .page-toggler a {
+        z-index: auto;
     }
 }
 #page-local-joulegrader-view {
@@ -3539,7 +3555,8 @@ table#user-grades tr.avg td.cell {
 .path-admin-report,
 .pagelayout-admin,
 #page-backup-import,
-#page-course-editsection {
+#page-course-editsection,
+#page-question-edit {
     #region-main {
         width: 100%;
         max-width: 100%;
@@ -4801,10 +4818,18 @@ button.snap-icon-toggle {
 }
 
 // Cover image control.
+.has-course-leftnav, #page-header.snap-category-header.mast-image {
+    #page-mast {
+        display: flex;
+    }
+}
+#page-site-index #page-mast {
+    display: inline-block;
+}
+
 #snap-coverimagecontrol {
     float: right;
-    margin-left: 1em;
-    display: inline-block;
+    margin: auto 0 auto auto;
     opacity: 0;
     @include alakazam;
 
@@ -4831,13 +4856,6 @@ label[for="snap-coverfiles"],
 #snap-changecoverimageconfirmation button {
     position: relative;
     display: none;
-}
-
-body:not(.pagelayout-coursecategory) {
-    label[for="snap-coverfiles"],
-    #snap-changecoverimageconfirmation button {
-        top: -2.5em;
-    }
 }
 
 #page-course-view-topics #page-header.mast-image .alert-warning {
@@ -5431,10 +5449,9 @@ header#mr-nav {
         max-height: 100%;
     }
 }
-#page-course-view-topics, #page-course-view-weeks, #page-course-index-category {
-    #page-header {
-        min-height: 210px;
-    }
+
+#page-header.mast-image {
+    min-height: calc(100vw/6);
 }
 @media (min-width: 992px) {
     .theme-snap #snap-header {
@@ -5444,7 +5461,6 @@ header#mr-nav {
         padding-top: 30px;
         margin-top: 100px!important;
         background-position: center center;
-        background-size: 100% 100%;
     }
     header#mr-nav div#snap-custom-menu-header {
         display: block;
@@ -5468,7 +5484,6 @@ header#mr-nav {
         padding-top: 30px;
         margin-top: 50px!important;
         background-position: center center;
-        background-size: 100% 100%;
     }
     header#mr-nav div#snap-custom-menu-header {
         display: none;
@@ -6471,8 +6486,9 @@ body[id^="page-grade-"] #region-main .container-fluid.tertiary-navigation {
         }
     }
 
-    // Intellicart icon.
-    #nav-intellicart-popover-container .popover-region-toggle.nav-link.icon-no-margin:focus-visible {
+    // Intellicart and Accessibility icons.
+    #nav-intellicart-popover-container .popover-region-toggle.nav-link.icon-no-margin:focus-visible,
+    #nav-local-accessibility-popover-container:has(button:focus-visible) {
         @extend .fa-beat;
         --fa-animation-duration: 0.5s;
         --fa-animation-iteration-count: 1;
@@ -6495,6 +6511,70 @@ body[id^="page-grade-"] #region-main .container-fluid.tertiary-navigation {
         --fa-animation-iteration-count: 1;
         .icon.fa-search {
             -webkit-text-stroke-width: 1px;
+        }
+    }
+    #nav-local-accessibility-popover-container {
+        padding: .12rem .3rem .45rem .3rem;
+        &.focused-icon {
+          height: 100%;
+          border-radius: .5rem;
+        }
+        #local-accessibility-buttoncontainer {
+            position: inherit;
+            button:focus {
+              border: none;
+              outline: none;
+              box-shadow: none;
+            }
+        }
+
+        div.local-accessibility-panel {
+            position: absolute;
+            top: 4rem;
+            right: 11rem;
+            transform-origin: top center;
+            border-radius: calc(0.5rem - 1px) calc(0.5rem - 1px) 0 0;
+            height: fit-content;
+            clip-path: inset(0 0 100% 0);
+            opacity: 0;
+            transition: clip-path 300ms ease, opacity 250ms ease-out;
+            will-change: clip-path, opacity;
+            box-shadow: none !important;
+            &.is-visible {
+              clip-path: inset(0 0 0 0);
+              opacity: 1;
+            }
+            div.card-body {
+                background-color: white;
+                max-height: 70vh;
+
+                a.btn-secondary:hover {
+                  color: white;
+                }
+            }
+            > .card-body {
+              border: 1px solid #ddd;
+              border-top: none;
+              border-radius: 0 0 .6rem .6rem;
+            }
+
+            @media screen and (max-width: 992px) {
+              right: 1rem;
+              left: auto;
+              width: calc(100vw - 2rem);
+              max-width: 73%;
+            }
+            @media screen and (max-width: 600px) {
+              left: 0.1rem;
+              width: calc(100vw - 1rem);
+              max-width: none;
+              min-width: auto;
+            }
+            @media screen and (max-width: 767px) {
+                .card {
+                  margin: 0.5em 0;
+                }
+            }
         }
     }
 }
@@ -6606,4 +6686,8 @@ body#page-mod-assign-grading.path-mod-assign .gradingtable thead tr {
   .tertiary-navigation {
     display: none;
   }
+}
+
+.modal {
+    z-index: 1052; // Higher than Snap header.
 }

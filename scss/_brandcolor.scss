@@ -83,6 +83,24 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
         }
     }
 
+    #snap-header #nav-local-accessibility-popover-container {
+        &.focused-icon {
+            outline: $brand-primary solid 3px;
+        }
+
+        div.local-accessibility-panel {
+            div.card-header {
+                background-color: $brand-primary !important;
+            }
+
+            div.card-body {
+                input[type="range"] {
+                    accent-color: $brand-primary;
+                }
+            }
+        }
+    }
+
     #snap-pm-courses .nav-tabs a.nav-link.active {
         color: darken($brand-primary, 8%);
     }
@@ -864,6 +882,10 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
         }
     }
 
+    .modal-dialog.modal-dialog-centered.modal-dialog-scrollable {
+        outline: none;
+    }
+
     #snap-coverimagecontrol > label.btn-outline-primary.btn-sm {
         background-color: white !important;
         &:hover,
@@ -1498,6 +1520,9 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
             background-color: $brand-primary;
         }
     }
+        #course-toc.state-visible .course-toc-mobile-header {
+          background-color: $brand-primary;
+        }
 }
 
 /*

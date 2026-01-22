@@ -15,6 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 import {isSmall} from 'core/pagehelpers';
+import {addCloseButtonToBlockSettings} from './util';
 import {setUserPreferences, getUserPreferences} from 'core_user/repository';
 
 /**
@@ -37,6 +38,10 @@ const SELECTORS = {
     NAV_UNPINNED: '#mr-nav.headroom--unpinned',
     GOTO_TOP_LINK: '#goto-top-link',
     COURSE_TOC: '#course-toc',
+    MODAL_BACKDROP: 'body > div > div.modal-backdrop',
+    CLOSE_MESSAGE_DRAWER_BUTTON: '[id^="message-drawer-"] a[data-action="closedrawer"]',
+    MESSAGE_APP_CLASS: 'div[id^=\'drawer-\'] > div.message-app',
+    MESSAGE_DRAWER_TOGGLE: 'a[id^="message-drawer-toggle"]',
 };
 
 const CLASSES = {
@@ -47,6 +52,7 @@ const CLASSES = {
     ROTATE: 'rotate-180',
     STATE_VISIBLE: 'state-visible',
     POSITIONING_OFFSCREEN: 'positioning-offscreen',
+    DRAWER_OPEN: 'snap_drawer_open',
 };
 
 const DRAWERS = {
@@ -69,6 +75,7 @@ const POPOVERS_DROPDOWNS = {
         '#user-menu-toggle', // User menu
         '#nav-intellicart-popover-container', // Intellicart
         '#nav-notification-popover-container', // Notifications
+        '#local-accessibility-buttoncontainer', // Accessibility
     ]
 };
 
@@ -87,6 +94,10 @@ const PREFERENCES = {
 const FORCEOPEN_BODY_IDS = [
     'page-mod-quiz-attempt',
     'page-mod-book-view'
+];
+
+const FORCEBLOCK_BODY_IDS = [
+    'page-mod-book-edit',
 ];
 
 const PREFERENCE_MAP = {
@@ -204,9 +215,11 @@ const handleDrawerButtonClick = (e) => {
             closeOtherDrawers(activeSelector, button);
             button.classList.add(CLASSES.ACTIVE);
             setDrawerPreference(activeSelector, true);
+            toggleBodyDrawerClass();
         } else {
             button.classList.remove(CLASSES.ACTIVE);
             setDrawerPreference(activeSelector, false);
+            toggleBodyDrawerClass();
         }
     }, 50); // Small delay to allow the drawer state to update
 };
@@ -300,9 +313,16 @@ const handleMessagesPopoverClick = (e) => {
 };
 
 /**
- * Set the Actual Drawer based on user preferences.
+ * Applies initial drawer state based on user preferences and page context.
  *
- * @return {Promise}
+ * This function runs on page load to restore the drawer (e.g. blocks drawer)
+ * according to saved preferences. It may also force the drawer to open or remain
+ * closed based on specific page conditions.
+ *
+ * Should only be used during initialization. Calling it later may cause
+ * inconsistent UI behavior.
+ *
+ * @return {Promise<void>}
  */
 const setActiveDrawer = async() => {
     let preferences = await getUserPreferences(null, M.cfg.userId);
@@ -324,8 +344,14 @@ const setActiveDrawer = async() => {
             preferencesArray[pref] = preferences[pref];
         }
         if (pref === PREFERENCES.BLOCKS_DRAWER) {
-            if (FORCEOPEN_BODY_IDS.includes(document.body.id)) {
+            let bodyId = document.body.id;
+            // Force open but not in small screen sizes.
+            if (FORCEOPEN_BODY_IDS.includes(bodyId) && window.innerWidth > 500) {
                 preferencesArray[pref] = 1;
+            }
+            // Prevents the drawer from opening automatically on specific pages, but does not disable manual opening.
+            if (FORCEBLOCK_BODY_IDS.includes(bodyId)) {
+                preferencesArray[pref] = 0;
             }
         }
     });
@@ -377,6 +403,7 @@ const handleCloseDrawerClick = () => {
     // Remove active classes from all drawer buttons
     document.querySelectorAll(SELECTORS.DRAWER_BUTTON).forEach(button => {
         button.classList.remove(CLASSES.ACTIVE);
+        document.body.classList.remove(CLASSES.DRAWER_OPEN);
     });
     
     // Add collapsed class to messages popover if it's open
@@ -428,6 +455,33 @@ const setupEventListeners = () => {
     const messagesPopover = document.querySelector(SELECTORS.MESSAGES_POPOVER);
     if (messagesPopover) {
         messagesPopover.addEventListener('click', handleMessagesPopoverClick);
+
+        // We have an event from Core subscribed with PubSub, that always runs after Snap has run,
+        // and it creates the unwanted modal backdrop, see message/amd/src/message_drawer.js.
+        const messageDrawerPopover = document.querySelector(SELECTORS.MESSAGES_POPOVER);
+        const messageDrawerCloseIcon = document.querySelector(SELECTORS.CLOSE_MESSAGE_DRAWER_BUTTON);
+        const dismissCoreModalBackdrop = function(mutations) {
+            for (const mutation of mutations) {
+                if (mutation.type === 'childList') {
+                    const messagesPopoverCoreModalBackdrop =
+                        document.querySelector(SELECTORS.MODAL_BACKDROP);
+                    if (messagesPopoverCoreModalBackdrop && (document.activeElement === messageDrawerPopover
+                        || document.activeElement === messageDrawerCloseIcon)) {
+                        messagesPopoverCoreModalBackdrop.remove();
+                    }
+                    const messagePopoverIsHidden =
+                        document.querySelector(SELECTORS.MESSAGE_APP_CLASS)
+                            .parentElement.classList.contains('hidden');
+                    const messageDrawerIcon = document.querySelector(SELECTORS.MESSAGE_DRAWER_TOGGLE);
+
+                    if (messagePopoverIsHidden && messageDrawerIcon === document.activeElement) {
+                        messageDrawerIcon.blur();
+                    }
+                }
+            }
+        };
+        const messageDrawerObserver = new MutationObserver(dismissCoreModalBackdrop);
+        messageDrawerObserver.observe(document.body, {subtree: true, childList: true});
     }
     
     // Add click event listeners to elements with data-action="closedrawer"
@@ -443,6 +497,7 @@ const setupEventListeners = () => {
  * Initialize the sidebar menu functionality
  */
 export const init = () => {
+    addCloseButtonToBlockSettings();
     setupEventListeners();
     updateElementPositions();
     
@@ -596,4 +651,34 @@ const setupPopoverClickHandlers = () => {
             }, true);
         });
     });
+};
+
+/**
+ * Toggle the "snap_drawer_open" class in the body, used to apply styles if necessary.
+ */
+const toggleBodyDrawerClass = () => {
+    const drawerButtons = document.querySelectorAll(SELECTORS.DRAWER_BUTTON);
+    let drawerActive = false;
+    drawerButtons.forEach(button => {
+        const activeSelector = button.dataset.activeselector;
+        if (!activeSelector) {
+            return;
+        }
+
+        const activeElements = document.querySelectorAll(activeSelector);
+        const isActive = Array.from(activeElements).some(el =>
+            el.classList.contains(CLASSES.SHOW) ||
+            el.classList.contains(CLASSES.ACTIVE) ||
+            !el.classList.contains(CLASSES.COLLAPSED) // Consider not collapsed as active
+        );
+
+        if (isActive) {
+            drawerActive = true;
+        }
+    });
+    if (drawerActive) {
+        document.body.classList.add(CLASSES.DRAWER_OPEN);
+    } else {
+        document.body.classList.remove(CLASSES.DRAWER_OPEN);
+    }
 };

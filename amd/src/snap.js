@@ -27,8 +27,9 @@
  */
 define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/util', 'theme_snap/cover_image',
         'theme_snap/progressbar', 'core/templates', 'core/str', 'core/ajax', 'theme_snap/accessibility',
-        'theme_snap/messages', 'theme_snap/scroll'],
-    function($, log, Aria, Headroom, util, coverImage, ProgressBar, templates, str, ajax, accessibility, messages, Scroll) {
+        'theme_snap/messages', 'theme_snap/scroll', 'core/custom_interaction_events'],
+    function($, log, Aria, Headroom, util, coverImage, ProgressBar, templates, str, ajax, accessibility, messages, Scroll,
+             CustomEvents) {
 
         'use strict';
 
@@ -104,7 +105,7 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
         });
 
         var mobileFormChecker = function() {
-            var savebuttonsformrequired = $('div[role=main] .mform div.snap-form-required fieldset > div.form-group.fitem');
+            var savebuttonsformrequired = $('div[role=main] .mform div.snap-form-required fieldset > div.fitem');
             var savebuttonsformadvanced = $('div[role=main] .mform div.snap-form-advanced > div:nth-of-type(3)');
             var width = $(window).width();
             if (width < 992) {
@@ -118,6 +119,16 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
             const graderHeader = $('.path-grade-report-grader .gradeparent tr.heading');
             if (graderHeader.length) {
                 graderHeader.css('top', $('#mr-nav').height() + 'px');
+            }
+            if (window.location.pathname === '/grade/report/grader/index.php') {
+                const mrNav = document.getElementById('mr-nav');
+                document.addEventListener("scroll", () => {
+                    if (mrNav.classList.contains('headroom--pinned')) {
+                        graderHeader.css('top', window.getComputedStyle(mrNav).height);
+                    } else if (mrNav.classList.contains('headroom--unpinned')) {
+                        graderHeader.css('top', '0px');
+                    }
+                });
             }
         };
 
@@ -549,9 +560,15 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
             });
 
             // Admin drawer: Onclick for toggle of state-visible of admin block and mobile menu.
-            $(document).on("click", "#admin-menu-trigger, #toc-mobile-menu-toggle, [id^=\"message-drawer-toggle-\"]", function(e) {
+            $(document).on(
+                "click",
+                "#admin-menu-trigger, #toc-mobile-menu-toggle, [id^=\"message-drawer-toggle-\"], #close-block-settings",
+                function(e) {
                 var href = this.getAttribute('href');
                 // Make this only happen for settings button.
+                if (this.getAttribute('id') === 'close-block-settings') {
+                    var href = document.getElementById('admin-menu-trigger').getAttribute('href');
+                }
                 if (this.getAttribute('id') === 'admin-menu-trigger'
                     || this.getAttribute('id').startsWith('message-drawer-toggle-')) {
                     $(this).toggleClass('active');
@@ -560,6 +577,15 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                         $(this).attr('aria-expanded', false);
                     } else {
                         $(this).attr('aria-expanded', true);
+                    }
+                }
+                if (this.getAttribute('id') === 'close-block-settings') {
+                    $('#admin-menu-trigger').toggleClass('active');
+                    $('#page').toggleClass('offcanvas');
+                    if ($('#admin-menu-trigger').attr('aria-expanded') === 'true') {
+                        $('#admin-menu-trigger').attr('aria-expanded', false);
+                    } else {
+                        $('#admin-menu-trigger').attr('aria-expanded', true);
                     }
                 }
                 // Code for mod_data sticky footer.
@@ -950,6 +976,16 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                     );
                 }
 
+                // We need this loaded super fast, before Core. If we wait for page load, sometimes Core registers theirs first.
+                $(document).on(CustomEvents.events.activate, e => {
+                    const messagePopoverIsVisible =
+                        !document.querySelector('div[id^=\'drawer-\'] > div.message-app')
+                            .parentElement.classList.contains('hidden');
+                    if (messagePopoverIsVisible) {
+                        e.stopImmediatePropagation();
+                    }
+                });
+
                 // When document has loaded.
                 /* eslint-disable complexity */
                 $(document).ready(function() {
@@ -1192,7 +1228,7 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                                     {key: 'multimediacard', component: 'theme_snap'}
                                 ]).done(function(stringsjs) {
                                     var activityCards = stringsjs[0];
-                                    var cardmultimedia = $("[id='id_showdescription']").closest('.form-group');
+                                    var cardmultimedia = $("[id='id_showdescription']").closest('.fitem');
                                     $(cardmultimedia).append(activityCards);
                                 });
                             }
@@ -1202,29 +1238,20 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                                 let stringmsg = stringsjs[0];
                                 let modpagelocation = $("#page-mod-page-mod")
                                     .find("#id_coursecontentnotification")
-                                    .closest('.form-group');
+                                    .closest('.fitem');
                                 $(modpagelocation).append(stringmsg);
                             });
                         }
 
                         // Resources - put description in common mod settings.
-                        description = $("#page-mod-resource-mod [data-fieldtype='editor']").closest('.form-group');
-                        var showdescription = $("#page-mod-resource-mod [id='id_showdescription']").closest('.form-group');
+                        description = $("#page-mod-resource-mod [data-fieldtype='editor']").closest('.fitem');
+                        var showdescription = $("#page-mod-resource-mod [id='id_showdescription']").closest('.fitem');
                         $("#page-mod-resource-mod .snap-form-advanced #id_modstandardelshdr .fcontainer").append(description);
                         $("#page-mod-resource-mod .snap-form-advanced #id_modstandardelshdr .fcontainer").append(showdescription);
 
                         // Assignment - put due date in required.
-                        var duedate = $("#page-mod-assign-mod [for='id_duedate']").closest('.form-group');
+                        var duedate = $("#page-mod-assign-mod [for='id_duedate']").closest('.fitem');
                         $("#page-mod-assign-mod .snap-form-required .fcontainer").append(duedate);
-
-                        // Move availablity at the top of advanced settings.
-                        var availablity = $('#id_visible').closest('.form-group').addClass('snap-form-visibility');
-                        var label = $(availablity).find('label');
-                        var select = $(availablity).find('select');
-                        $(label).insertBefore(select);
-
-                        // SHAME - rewrite visibility form lang string to be more user friendly.
-                        $(label).text(M.util.get_string('visibility', 'theme_snap') + ' ');
 
                         if ($("#page-course-edit").length) {
                             // We are in course editing form.
@@ -1262,14 +1289,16 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                                 });
                         }
 
+                        // Move availablity at the top of advanced settings.
+                        var availablity = $('#id_visible').closest('.fitem').addClass('snap-form-visibility');
                         $('.snap-form-advanced').prepend(availablity);
 
                         // Add save buttons.
-                        var savebuttons = $('form[id^="mform1"] > .form-group:last');
+                        var savebuttons = $('form[id^="mform1"] > .fitem:last');
                         $(mainForm).append(savebuttons);
 
                         // Expand collapsed fieldsets when editing a mod that has errors in it.
-                        var errorElements = $('.form-group.has-danger');
+                        var errorElements = $('.fitem.has-danger');
                         if (onModSettings && errorElements.length) {
                             errorElements.closest('.collapsible').removeClass('collapsed');
                         }
@@ -1323,7 +1352,7 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                     }
                     // Remove disabled attribute for section name for topics format.
                     if (onSectionSettings) {
-                        var sectionName = $("#page-course-editsection.format-topics .form-group #id_name_value");
+                        var sectionName = $("#page-course-editsection.format-topics .fitem #id_name_value");
                         if (sectionName.length) {
                             let sectionNameIsDiabled = document.getElementById('id_name_value').hasAttribute("disabled");
                             if (sectionNameIsDiabled) {
@@ -1395,7 +1424,7 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                     }
 
                     // Re position submit buttons for forms when using mobile mode at the bottom of the form.
-                    var savebuttonsformrequired = $('div[role=main] .mform div.snap-form-required fieldset > div.form-group.fitem');
+                    var savebuttonsformrequired = $('div[role=main] .mform div.snap-form-required fieldset > div.fitem');
                     var width = $(window).width();
                     if (width < 767) {
                         $('.snap-form-advanced').append(savebuttonsformrequired);
@@ -1404,7 +1433,7 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                     // Fix a position for the new 'Send content change notification' setting.
                     if ( $('.path-mod.theme-snap #id_coursecontentnotification').length ) {
                         const notificationCheck = document.getElementById('id_coursecontentnotification')
-                            .closest(".form-group.fitem");
+                            .closest(".fitem");
                         const submitButtons = $('.snap-form-required [data-groupname="buttonar"]');
                         if (notificationCheck !== null && submitButtons.length) {
                             notificationCheck.classList.add('snap_content_notification_check');
@@ -1421,7 +1450,7 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
 
                         // Making sure that the save buttons are displayed.
                         const notificationCheck = document.getElementById('id_coursecontentnotification')
-                            .closest(".form-group.fitem");
+                            .closest(".fitem");
                         $('.snap-form-advanced').append(notificationCheck);
                         $('.snap-form-advanced').append(savebuttonsformrequired);
                     }
@@ -1529,6 +1558,48 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
 
                     // Add the correct section return to the modchooser.
                     util.modchooserSectionReturn();
+
+                    // (Temporary) solution for the error presented in INT-21265
+                    document.addEventListener('click', function(e) {
+                        const regradeBtn = e.target.closest('#regradeattempts');
+                        if (!regradeBtn) {
+                            return;
+                        }
+
+                        let helpIcon = regradeBtn.dataset.helpIcon;
+
+                        // Replace <button> with <a> in data-help-icon to match what Core expects
+                        if (typeof helpIcon === 'string' && helpIcon.includes('<button')) {
+                            helpIcon = helpIcon.replace('<button', '<a').replace('</button>', '</a>');
+                            regradeBtn.dataset.helpIcon = helpIcon;
+                        }
+
+                        // Watch for DOM changes to detect the modal
+                        const observer = new MutationObserver((mutations, obs) => {
+                            const modal = document.querySelector('.modal.show');
+                            if (!modal) {
+                                return;
+                            }
+
+                            const helpAnchor = modal.querySelector('.modal-title a.iconhelp');
+                            if (helpAnchor) {
+                                // Activate Bootstrap popover manually
+                                $(helpAnchor).popover({
+                                    html: true,
+                                    container: 'body',
+                                    trigger: 'focus',
+                                });
+
+                                // Stop observing
+                                obs.disconnect();
+                            }
+                        });
+
+                        observer.observe(document.body, {
+                            childList: true,
+                            subtree: true,
+                        });
+                    });
                 });
                 accessibility.snapAxInit();
                 messages.init();

@@ -696,6 +696,11 @@ li.section:focus {
             filter: $go1-filter;
         }
     }
+    div[data-internal="pld"] .modicon_pld {
+        img.activityicon {
+          filter: unset;
+        }
+    }
 
     .activityiconcontainer {
         &.modicon_hotpot {
@@ -899,6 +904,13 @@ li.section:focus {
     .page-header-image .activityiconcontainer .activityicon {
         filter: $go1-filter;
     }
+}
+
+#page-mod-pld-view,
+#page-mod-pld-mod {
+  .page-header-image .activityiconcontainer .activityicon {
+    filter: unset;
+  }
 }
 
 #page-mod-quiz-view.pagelayout-secure #page.container{
@@ -3642,6 +3654,14 @@ body.path-course-index {
         opacity: 1;
         overflow-y: auto;
     }
+
+    .grader-grading-panel.hidden {
+        right: -430px;
+        display: block;
+        visibility: hidden;
+        opacity: 0;
+        transition: right 0.2s ease-in-out, visibility 0s ease-in-out 0.2s, opacity 0s ease-in-out 0.2s;
+    }
 }
 
 body[id^='page-mod-data'] {
@@ -3672,6 +3692,16 @@ body[id^='page-mod-data'] {
         margin-top: 1em;
         .snap_cover_image_preview {
             width: 450px;
+        }
+        .cropper-bg {
+          background-image: unset;
+        }
+        .cropper-drag-box {
+          border-radius: 0.5rem;
+        }
+        .cropper-crop-box {
+          border: 2px solid black;
+          box-shadow: black 0px 0px 10px;
         }
     }
     .snap_cover_image_options {
@@ -3773,4 +3803,10 @@ body[id^='page-mod-data'] {
             }
         }
     }
+}
+// Mod PLD view page styles.
+#page-mod-pld-view {
+  section#region-main .page-context-header {
+    padding: 1em 2em 0 2em;
+  }
 }

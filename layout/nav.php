@@ -98,6 +98,13 @@ if (!empty($custommenu)) {
 <?php
 // Only proceed with sidebar menu for logged-in users
 if (isloggedin() && !isguestuser()) {
+    global $SESSION;
+    if (isset($SESSION->justloggedin)) {
+        require_once($CFG->dirroot . '/user/lib.php');
+        unset($SESSION->justloggedin);
+        // Just logged in, resetting the failed login count
+        user_count_login_failures($USER);
+    }
     if (!empty($CFG->messaging)) {
         $unreadcount = \core_message\api::count_unread_conversations($USER);
         $requestcount = \core_message\api::get_received_contact_requests_count($USER->id);
@@ -162,7 +169,6 @@ if (isloggedin() && !isguestuser()) {
                 ['name' => 'toggler', 'value' => 'drawers'],
                 ['name' => 'action', 'value' => 'toggle'],
                 ['name' => 'target', 'value' => 'theme_snap-drawers-blocks'],
-                ['name' => 'original-title', 'value' => get_string('toggleblockdrawer', 'theme_snap')],
                 ['name' => 'placement', 'value' => 'right'],
                 ['name' => 'activeselector', 'value' => '#theme_snap-drawers-blocks.show']
             ],
