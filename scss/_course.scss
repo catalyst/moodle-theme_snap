@@ -1714,6 +1714,10 @@ body.snap-resource-card {
             padding-top: 0;
             margin-top: 0;
         }
+
+        .activity-badges .badge {
+            width: 100%;
+        }
     }
 }
 
@@ -2009,7 +2013,6 @@ body.snap-resource-card {
 
         & > .readmoreicon {
           display: block;
-          margin-top: -1rem;
         }
       }
 
