@@ -577,5 +577,11 @@ function theme_snap_user_preferences(): array {
             'default' => 'all',
             'permissioncallback' => [core_user::class, 'is_current_user'],
         ],
+        'snap_my_courses_category_user_preference' => [
+            'type' => PARAM_ALPHANUM,
+            'null' => NULL_NOT_ALLOWED,
+            'default' => 'all',
+            'permissioncallback' => [core_user::class, 'is_current_user'],
+        ],
     ];
 }

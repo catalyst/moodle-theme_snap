@@ -44,17 +44,27 @@ class webservice_ws_block_myoverview extends \advanced_testcase {
 
         $startdate = gmmktime('0', '0', '0', 10, 24, 2023);
         $enddate = gmmktime('0', '0', '0', 10, 24, 2024);
-
         $course = $this->getDataGenerator()->create_course(['startdate' => $startdate, 'enddate' => $enddate]);
         $user = $this->getDataGenerator()->create_user();
-
-        $studentrole = $DB->get_record('role', array('shortname' => 'student'));
+        $categorycreated = $this->getDataGenerator()->create_category(['name' => 'test']);
+        $course2 = $this->getDataGenerator()->create_course([
+                'startdate' => $startdate,
+                'enddate' => $enddate,
+                'category' => $categorycreated->id]);
+        $studentrole = $DB->get_record('role', ['shortname' => 'student']);
         $this->getDataGenerator()->enrol_user($user->id,
             $course->id,
             $studentrole->id);
-
+        $this->getDataGenerator()->enrol_user($user->id,
+            $course2->id,
+            $studentrole->id);
+        // User not enrol in this course.
+        $this->getDataGenerator()->create_course([
+                'startdate' => $startdate,
+                'enddate' => $enddate,
+                'category' => $categorycreated->id]);
         $this->setUser($user);
-
+        $usercourses = enrol_get_my_courses();
         $classification = 'all';
         $limit = 0;
         $offset = 0;
@@ -64,6 +74,7 @@ class webservice_ws_block_myoverview extends \advanced_testcase {
         $searchvalue = null;
         $yeardata = '2022';
         $progress = null;
+        $category = null;
 
         $result = ws_block_myoverview::service(
             $classification,
@@ -74,7 +85,8 @@ class webservice_ws_block_myoverview extends \advanced_testcase {
             $customfieldvalue,
             $searchvalue,
             $yeardata,
-            $progress
+            $progress,
+            $category
         );
 
         $this->assertEmpty($result["courses"]);
@@ -88,6 +100,7 @@ class webservice_ws_block_myoverview extends \advanced_testcase {
         $searchvalue = null;
         $yeardata = '2024';
         $progress = null;
+        $category = 'all';
 
         $result = ws_block_myoverview::service(
             $classification,
@@ -98,9 +111,36 @@ class webservice_ws_block_myoverview extends \advanced_testcase {
             $customfieldvalue,
             $searchvalue,
             $yeardata,
-            $progress
+            $progress,
+            $category
         );
+        // All category filter selected, all courses should be displayed.
+        $this->assertEquals(count($usercourses),  count($result["courses"]));
+        // Testing the category filter with an extra category.
+        $classification = 'all';
+        $limit = 0;
+        $offset = 0;
+        $sort = 'fullname';
+        $customfieldname = null;
+        $customfieldvalue = null;
+        $searchvalue = null;
+        $yeardata = '2024';
+        $progress = null;
+        $category = $categorycreated->id;
 
-        $this->assertNotEmpty($result["courses"]);
+        $result = ws_block_myoverview::service(
+                $classification,
+                $limit,
+                $offset,
+                $sort,
+                $customfieldname,
+                $customfieldvalue,
+                $searchvalue,
+                $yeardata,
+                $progress,
+                $category
+        );
+        // Only one category with the filter.
+        $this->assertEquals(1,  count($result["courses"]));
     }
 }

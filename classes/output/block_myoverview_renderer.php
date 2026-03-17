@@ -39,7 +39,7 @@ class block_myoverview_renderer extends \block_myoverview\output\renderer {
      * @return string HTML string
      */
     public function render_main(main $main) {
-        global $USER;
+        global $USER, $DB;
 
         if (!count(enrol_get_all_users_courses($USER->id, true))) {
             return $this->render_from_template(
@@ -52,6 +52,7 @@ class block_myoverview_renderer extends \block_myoverview\output\renderer {
 
         $yearpreference = get_user_preferences('snap_my_courses_year_user_preference') ?? 'all';
         $progresspreference = get_user_preferences('snap_my_courses_progress_user_preference') ?? 'all';
+        $categorypreference = get_user_preferences('snap_my_courses_category_user_preference') ?? 'all';
         $data['progresspreference'] = $progresspreference;
 
         if ($yearpreference != 'all') {
@@ -60,6 +61,17 @@ class block_myoverview_renderer extends \block_myoverview\output\renderer {
             $yearplaceholder = get_string('year', 'theme_snap');
         }
         $data['yearplaceholder']  = $yearplaceholder;
+
+        if ($categorypreference != 'all') {
+            $categoryselect = $DB->get_record('course_categories', ['id' => $categorypreference]);
+            $categoryplaceholder = $categoryselect->name;
+            $categorypreferenceplaceholder = $categoryselect->name;
+
+        } else {
+            $categorypreferenceplaceholder = 'all';
+            $categoryplaceholder = 'Category';
+        }
+        $data['categoryplaceholder']  = $categoryplaceholder;
 
         if ($progresspreference == 'completed') {
             $data['completed']  = true;
@@ -73,7 +85,10 @@ class block_myoverview_renderer extends \block_myoverview\output\renderer {
 
         $courses = enrol_get_my_courses('enddate', 'fullname ASC, id DESC');
         $coursesyears = [];
+        $coursescats = [];
         foreach ($courses as $course) {
+            $category = \core_course_category::get($course->category, IGNORE_MISSING);
+            $categoryname = $category->name;
             if (!empty($course->enddate)) {
                 $endyear = userdate($course->enddate, '%Y');
                 if ($yearpreference == $endyear) {
@@ -98,7 +113,30 @@ class block_myoverview_renderer extends \block_myoverview\output\renderer {
                 $yearitem->$endyear = html_writer::tag('li', $yearlink);
                 $coursesyears[$endyear] = $yearitem;
             }
+            $categoryid = $category->id;
+            if ($categorypreference == $categoryid) {
+                $catlink = html_writer::tag('a', $categoryname, [
+                        'class' => 'dropdown-item',
+                        'href' => '#',
+                        'data-filter' => 'category',
+                        'data-pref' => $categoryid,
+                        'data-value' => $categoryid,
+                        'aria-current' => 'true',
+                ]);
+            } else {
+                $catlink = html_writer::tag('a', $categoryname, [
+                        'class' => 'dropdown-item',
+                        'href' => '#',
+                        'data-filter' => 'category',
+                        'data-pref' => $categoryid,
+                        'data-value' => $categoryid,
+                ]);
+            }
+            $catitem = new stdClass();
+            $catitem->$categoryid = html_writer::tag('li', $catlink);
+            $coursescats[$categoryid] = $catitem;
             ksort($coursesyears);
+            ksort($coursescats);
         }
         if (!empty($coursesyears)) {
             $allyearslink = html_writer::tag('a', get_string('allyears', 'theme_snap'),[
@@ -114,6 +152,21 @@ class block_myoverview_renderer extends \block_myoverview\output\renderer {
             }
             $data['years'] = $yearslist;
             $data['yearpreference'] = $yearpreference;
+        }
+        if (!empty($coursescats)) {
+            $allcatslink = html_writer::tag('a', get_string('allcat', 'theme_snap'),[
+                    'class' => 'dropdown-item',
+                    'href' => '#',
+                    'data-filter' => 'category',
+                    'data-pref' => 'all',
+                    'data-value' => 'all'
+            ]);
+            $catslist = html_writer::tag('li', $allcatslink);
+            foreach ($coursescats as $cat => $catlistitem) {
+                $catslist .= $catlistitem->$cat;
+            }
+            $data['categories'] = $catslist;
+            $data['categorypreference'] = $categorypreferenceplaceholder;
         }
 
         return $this->render_from_template('block_myoverview/main', $data);

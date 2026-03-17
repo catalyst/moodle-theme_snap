@@ -496,6 +496,7 @@ $string['opened'] = 'Opened {$a}';
 $string['year'] = 'Year';
 $string['homepage'] = 'Homepage';
 $string['allyears'] = 'All years';
+$string['allcat'] = 'All Categories';
 $string['courselink'] = 'Go to course';
 $string['student'] = 'Student';
 $string['showcourseinformation'] = 'Show course information';

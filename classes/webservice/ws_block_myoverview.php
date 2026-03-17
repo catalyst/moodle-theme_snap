@@ -59,6 +59,8 @@ class ws_block_myoverview extends external_api {
                     VALUE_DEFAULT, null),
                 'progress' => new external_value(PARAM_TEXT, 'The courses completion progress',
                     VALUE_DEFAULT, null),
+                'catdata' => new external_value(PARAM_TEXT, 'The courses category',
+                        VALUE_DEFAULT, null),
             )
         );
     }
@@ -87,8 +89,10 @@ class ws_block_myoverview extends external_api {
         string $customfieldvalue = null,
         string $searchvalue = null,
         string $yeardata = null,
-        string $progress = null
+        string $progress = null,
+        string $catdata = null
     ) {
+        global $DB;
 
         $params = self::validate_parameters(self::service_parameters(),
             array(
@@ -100,7 +104,8 @@ class ws_block_myoverview extends external_api {
                 'customfieldvalue' => $customfieldvalue,
                 'searchvalue' => $searchvalue,
                 'yeardata' => $yeardata,
-                'progress' => $progress
+                'progress' => $progress,
+                'catdata' => $catdata,
             )
         );
         $mainFiltersResult = \core_course_external::get_enrolled_courses_by_timeline_classification(
@@ -122,6 +127,20 @@ class ws_block_myoverview extends external_api {
                 }
             }
             $mainFiltersResult["courses"] = $filteredbyyearcourses;
+        }
+        if ($params['catdata'] != null && $params['catdata'] != "all") {
+            $filteredbycatcourses = [];
+            $categorydata = $DB->get_records('course_categories',null,'','id, name');
+            $catdata = [];
+            foreach ($categorydata as $category) {
+                $catdata[$category->id] = $category->name;
+            }
+            foreach ($mainFiltersResult["courses"] as $course) {
+                if ($course->coursecategory == $catdata[$params['catdata']]) {
+                    $filteredbycatcourses[] = $course;
+                }
+            }
+            $mainFiltersResult["courses"] = $filteredbycatcourses;
         }
 
         if ($params['progress'] != "all") {
