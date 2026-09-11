@@ -31,11 +31,11 @@ namespace theme_snap\renderables;
  * @copyright Copyright (c) 2016 Open LMS
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class course_section_navigation_link implements \renderable {
+class course_section_navigation_link implements \core\output\renderable {
     /**
-     * @var int section number
+     * @var int section ID
      */
-    public $section;
+    public $sectionid;
 
     /**
      * @var string additional classes for link
@@ -48,14 +48,21 @@ class course_section_navigation_link implements \renderable {
     public $title;
 
     /**
+     * @var string section url
+     */
+    public $url;
+
+    /**
      * course_section_navigation_link constructor.
-     * @param int $section section number
+     * @param int $sectionid section number
      * @param string $classes additional classes for link
      * @param string $title section title
+     * @param string $url section url
      */
-    public function __construct($section, $classes, $title) {
-        $this->section = $section;
+    public function __construct($sectionid, $classes, $title, $url) {
+        $this->sectionid = $sectionid;
         $this->classes = $classes;
         $this->title = $title;
+        $this->url = $url;
     }
 }

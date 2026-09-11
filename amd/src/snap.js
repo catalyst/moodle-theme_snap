@@ -27,8 +27,9 @@
  */
 define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/util', 'theme_snap/cover_image',
         'theme_snap/progressbar', 'core/templates', 'core/str', 'core/ajax', 'theme_snap/accessibility',
-        'theme_snap/messages', 'theme_snap/scroll'],
-    function($, log, Aria, Headroom, util, coverImage, ProgressBar, templates, str, ajax, accessibility, messages, Scroll) {
+        'theme_snap/messages', 'theme_snap/scroll', 'core/custom_interaction_events'],
+    function($, log, Aria, Headroom, util, coverImage, ProgressBar, templates, str, ajax, accessibility, messages, Scroll,
+             CustomEvents) {
 
         'use strict';
 
@@ -104,7 +105,7 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
         });
 
         var mobileFormChecker = function() {
-            var savebuttonsformrequired = $('div[role=main] .mform div.snap-form-required fieldset > div.form-group.fitem');
+            var savebuttonsformrequired = $('div[role=main] .mform div.snap-form-required fieldset > div.fitem');
             var savebuttonsformadvanced = $('div[role=main] .mform div.snap-form-advanced > div:nth-of-type(3)');
             var width = $(window).width();
             if (width < 992) {
@@ -118,6 +119,16 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
             const graderHeader = $('.path-grade-report-grader .gradeparent tr.heading');
             if (graderHeader.length) {
                 graderHeader.css('top', $('#mr-nav').height() + 'px');
+            }
+            if (window.location.pathname === '/grade/report/grader/index.php') {
+                const mrNav = document.getElementById('mr-nav');
+                document.addEventListener("scroll", () => {
+                    if (mrNav.classList.contains('headroom--pinned')) {
+                        graderHeader.css('top', window.getComputedStyle(mrNav).height);
+                    } else if (mrNav.classList.contains('headroom--unpinned')) {
+                        graderHeader.css('top', '0px');
+                    }
+                });
             }
         };
 
@@ -326,22 +337,98 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
         };
 
         /**
-         * Listen for hash changes / popstates.
+         * Listeners for URL changes.
          * @param {CourseLibAmd} courseLib
          */
-        var listenHashChange = function(courseLib) {
-            var lastHash = location.hash;
-            $(window).on('popstate hashchange', function(e) {
-                var newHash = location.hash;
-                log.info('hashchange');
-                if (newHash !== lastHash) {
-                    $('#page, #moodle-footer, #logo, .skiplinks').css('display', '');
-                    if (onCoursePage()) {
-                        log.info('show section', e.target);
-                        courseLib.showSection();
-                    }
+        var ChangeURLListeners = function(courseLib) {
+            var lastUrl = location.href;
+            // Listener for URL changes (Back/Forward clicks)
+            $(window).on('popstate', function(e) {
+                if (onCoursePage()) {
+                    log.info('show section', e.target);
+                    courseLib.showSection();
                 }
-                lastHash = newHash;
+            });
+            $(window).on('hashchange', function() {
+                // Bring or show the corresponding section.
+                courseLib.sectionRouter();
+                var currentUrl = location.href;
+                var currentHash = location.hash;
+                log.info('URL has changed');
+                if (currentUrl !== lastUrl) {
+                    $('#page, #moodle-footer, #logo, .skiplinks').css('display', '');
+                    // Update editing Toggle with new URL.
+                    var $form = $('.editmode-switch-form');
+                    var urlObj = new URL(currentUrl);
+                    if (currentHash) {
+                        // In order to make switch toggle reload the page,
+                        // we add timestamp (ts) so it detects URL has changed.
+                        urlObj.searchParams.set('ts', Date.now());
+                    }
+                    var urlForToggle = urlObj.toString();
+                    $form.find('.custom-control-input').attr('data-pageurl', urlForToggle);
+                    $form.find('input[name="pageurl"]').val(urlForToggle);
+                }
+                lastUrl = currentUrl;
+            });
+        };
+
+        /**
+         * Listeners for navigation between sections.
+         */
+        var ChangeSectionListeners = function() {
+            // Navigation selectors.
+            var navSelectors = [
+                '.section_footer a',
+                '#toc-search-results a',
+                '#snap-new-section',
+                '#snap-course-tools',
+                '#courseindex-content .courseindex-section-title a.courseindex-link'
+            ].join(', ');
+
+            $('#snap-course-wrapper').on('click', navSelectors, function(e) {
+                var isNativeFormat = ['weeks', 'topics'].includes(self.courseConfig.format);
+                var href = $(this).attr('href');
+
+                // If not Snap format, Only show or Hide dashboard.
+                if (!isNativeFormat) {
+                    var $courseContent = $('#region-main .course-content');
+                    var $courseTools = $('#coursetools');
+                    if (href === '#coursetools') {
+                        e.preventDefault();
+                        // Show the dashboard and Hide course content.
+                        $courseContent.addClass('hidden');
+                        $courseTools.addClass('state-visible').focus();
+                    } else {
+                        // Hide Dashboard and show content.
+                        $courseTools.removeClass('state-visible');
+                        $courseContent.removeClass('hidden');
+                    }
+                    return;
+                }
+                // Every time the section changes, we close the bulkMenu if visible.
+                const bulkMenu = document.querySelector('.bulkenabled .section.state-visible .sticky-footer-content.bulkactions');
+                if (bulkMenu) {
+                    const closeButton = bulkMenu.querySelector('.bulkcancel button');
+                    closeButton?.click();
+                }
+
+                var link = $(this);
+                // Search section number
+                var sectionID = link.attr('section-id');
+                // For courseindex links, section number resides on parent div.
+                if (!sectionID) {
+                    sectionID = link.closest('.courseindex-section').attr('data-id');
+                }
+                // If we have a section, save it on Courseconfig.
+                if (typeof sectionID !== 'undefined' && sectionID.length > 0) {
+                    e.preventDefault();
+                    self.courseConfig.sectionid = parseInt(sectionID);
+                }
+
+                // Just update the URL, the hashchange does the rest.
+                history.pushState(null, null, href);
+                $(window).trigger('hashchange');
             });
         };
 
@@ -449,25 +536,6 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
          * just a wrapper for various snippets that add listeners
          */
         var addListeners = function() {
-            var selectors = [
-                '.chapters a',
-                '.section_footer a',
-                ' #toc-search-results a'
-            ];
-
-            $(document).on('click', selectors.join(', '), function(e) {
-                var href = this.getAttribute('href');
-                if (window.history && window.history.pushState) {
-                    history.pushState(null, null, href);
-                    // Force hashchange fix for FF & IE9.
-                    $(window).trigger('hashchange');
-                    // Prevent scrolling to section.
-                    e.preventDefault();
-                } else {
-                    location.hash = href;
-                }
-            });
-
             // Show fixed header on scroll down
             // using headroom js - http://wicky.nillia.ms/headroom.js/
             var myElement = document.querySelector("#mr-nav");
@@ -506,12 +574,21 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
 
             // Listener for toc search.
             var dataList = $("#toc-searchables").find('li').clone(true);
-            $('#course-toc').on('keyup', '#toc-search-input', function() {
+            if ($('#theme_boost-drawers-courseindex').length) {
+                str.get_strings([
+                    {key: 'tableofcontents', component: 'theme_snap'}
+                ]).done(function(stringsjs) {
+                    var headerDiv = $('<div class="snap-drawer-mobile-header"><h2>' +
+                        stringsjs[0] + '</h2></div>');
+                    $('#theme_boost-drawers-courseindex').prepend(headerDiv);
+                });
+            }
+            $('#theme_boost-drawers-courseindex').on('keyup', '#toc-search-input', function() {
                 tocSearchCourse(dataList);
             });
 
             // Handle keyboard navigation of search items.
-            $('#course-toc').on('keydown', '#toc-search-input', function(e) {
+            $('#theme_boost-drawers-courseindex').on('keydown', '#toc-search-input', function(e) {
                 var keyCode = e.keyCode || e.which;
                 if (keyCode === 9) {
                     // 9 tab
@@ -528,7 +605,7 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                 }
             });
 
-            $('#course-toc').on("click", '#toc-search-results a', function() {
+            $('#theme_boost-drawers-courseindex').on("click", '#toc-search-results a', function() {
                 $("#toc-search-input").val('');
                 $('#toc-search-results').html('');
                 $("#toc-search-input").removeClass('state-active');
@@ -549,9 +626,15 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
             });
 
             // Admin drawer: Onclick for toggle of state-visible of admin block and mobile menu.
-            $(document).on("click", "#admin-menu-trigger, #toc-mobile-menu-toggle, [id^=\"message-drawer-toggle-\"]", function(e) {
+            $(document).on(
+                "click",
+                "#admin-menu-trigger, [id^=\"message-drawer-toggle-\"], #close-block-settings",
+                function(e) {
                 var href = this.getAttribute('href');
                 // Make this only happen for settings button.
+                if (this.getAttribute('id') === 'close-block-settings') {
+                    var href = document.getElementById('admin-menu-trigger').getAttribute('href');
+                }
                 if (this.getAttribute('id') === 'admin-menu-trigger'
                     || this.getAttribute('id').startsWith('message-drawer-toggle-')) {
                     $(this).toggleClass('active');
@@ -562,9 +645,24 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                         $(this).attr('aria-expanded', true);
                     }
                 }
+                if (this.getAttribute('id') === 'close-block-settings') {
+                    $('#admin-menu-trigger').toggleClass('active');
+                    $('#page').toggleClass('offcanvas');
+                    if ($('#admin-menu-trigger').attr('aria-expanded') === 'true') {
+                        $('#admin-menu-trigger').attr('aria-expanded', false);
+                    } else {
+                        $('#admin-menu-trigger').attr('aria-expanded', true);
+                    }
+                }
                 // Code for mod_data sticky footer.
                 if ($('#sticky-footer').length != 0) {
                     $('#sticky-footer').toggleClass('snap-mod-data-sticky-footer');
+                }
+
+                // Early return for placeholder links.
+                if (!href || href.trim() === '#') {
+                    e.preventDefault();
+                    return;
                 }
 
                 $(href).attr('tabindex', '0');
@@ -604,22 +702,9 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                 }
             });
 
-            // Messages Drawer: Onclick for Snap sidebar menu to adjust sticky footer.
-            $(document).on("click", "[data-region=\"popover-region-messages\"] a", function() {
-                // Code for mod_data sticky footer.
-                if ($('#sticky-footer').length != 0) {
-                    $('#sticky-footer').toggleClass('snap-mod-data-sticky-footer');
-                }
-            });
-
             $(document).on("click", "[id^=\"message-drawer-\"] > div.closewidget > a", function(e) {
                 $('#page').toggleClass('offcanvas');
                 e.preventDefault();
-            });
-
-            // Mobile menu button.
-            $(document).on("click", "#course-toc.state-visible a", function() {
-                $('#course-toc').removeClass('state-visible');
             });
 
             // Check compatibility Mode in Snap.
@@ -716,44 +801,6 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                     }
                 }
             });
-        };
-
-        /**
-         * Edit url for edit toggle in course page.
-         * @param {string} courseFormat
-         */
-        var editToggleURL = function(courseFormat) {
-
-            // We use this MutationObserver because modifying the URL with a hash for navigation does not trigger a page
-            // reload. Specifically, the `window.location` statement in `lib/amd/src/edit_switch.js` does not cause a
-            // reload. To work around this, we need to manually reload the page, but only after confirming that the
-            // edit mode was successfully enabled. To do this, we observe the `aria-checked` attribute, which is added
-            // by the `toggleEditSwitch` function in `lib/amd/src/edit_switch.js` when the edit mode was changed.
-            const editModeToggleObserver = function(mutationsList, observer) {
-                for (const mutation of mutationsList) {
-                    if (mutation.type === 'attributes') {
-                        const editToggle = document.querySelector('.editmode-switch-form .custom-control-input');
-                        if (editToggle.hasAttribute('aria-checked')) {
-                            observer.disconnect();
-                            location.reload();
-                        }
-                    }
-                }
-            };
-            var courseEditSwitch = document.querySelector(
-                '#page-course-view-' + courseFormat + ' .editmode-switch-form .custom-control-input');
-            if (courseEditSwitch) {
-                var urlHash = window.location.hash;
-                var originalUrl = courseEditSwitch.getAttribute('data-pageurl');
-                var modifiedURL = originalUrl+urlHash;
-                courseEditSwitch.setAttribute('data-pageurl', modifiedURL);
-                window.onhashchange = function() {
-                    urlHash = window.location.hash;
-                    courseEditSwitch.setAttribute('data-pageurl', originalUrl+urlHash);
-                };
-                const observer = new MutationObserver(editModeToggleObserver);
-                observer.observe(document.body, {attributes: true});
-            }
         };
 
         /**
@@ -944,11 +991,24 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                             // Instantiate course lib.
                             var courseLib = new CourseLibAmd(courseConfig);
 
-                            // Hash change listener goes here because it requires courseLib.
-                            listenHashChange(courseLib);
+                            // URL change listener goes here because it requires courseLib.
+                            var isNativeFormat = ['weeks', 'topics'].includes(courseConfig.format);
+                            if (isNativeFormat) {
+                                ChangeURLListeners(courseLib);
+                            }
+                            ChangeSectionListeners();
                         }
                     );
                 }
+
+                // We need this loaded super fast, before Core. If we wait for page load, sometimes Core registers theirs first.
+                $(document).on(CustomEvents.events.activate, e => {
+                    const messagePopover = document.querySelector('div[id^=\'drawer-\'] > div.message-app');
+                    const messagePopoverIsVisible = messagePopover && !messagePopover.parentElement.classList.contains('hidden');
+                    if (messagePopoverIsVisible) {
+                        e.stopImmediatePropagation();
+                    }
+                });
 
                 // When document has loaded.
                 /* eslint-disable complexity */
@@ -963,9 +1023,6 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
 
                     // Make sure that the blocks are always within page-content for assig view page.
                     $('#page-mod-assign-view #page-content').append($('#moodle-blocks'));
-
-                    // Remove from Dom the completion tracking when it is disabled for an activity.
-                    $('.snap-header-card .snap-header-card-icons .disabled-snap-asset-completion-tracking').remove();
 
                     // Prepend asset type when activity is a folder to appear in the card header instead of the content.
                     var folders = $('li.snap-activity.modtype_folder');
@@ -1192,7 +1249,7 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                                     {key: 'multimediacard', component: 'theme_snap'}
                                 ]).done(function(stringsjs) {
                                     var activityCards = stringsjs[0];
-                                    var cardmultimedia = $("[id='id_showdescription']").closest('.form-group');
+                                    var cardmultimedia = $("[id='id_showdescription']").closest('.fitem');
                                     $(cardmultimedia).append(activityCards);
                                 });
                             }
@@ -1202,29 +1259,20 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                                 let stringmsg = stringsjs[0];
                                 let modpagelocation = $("#page-mod-page-mod")
                                     .find("#id_coursecontentnotification")
-                                    .closest('.form-group');
+                                    .closest('.fitem');
                                 $(modpagelocation).append(stringmsg);
                             });
                         }
 
                         // Resources - put description in common mod settings.
-                        description = $("#page-mod-resource-mod [data-fieldtype='editor']").closest('.form-group');
-                        var showdescription = $("#page-mod-resource-mod [id='id_showdescription']").closest('.form-group');
+                        description = $("#page-mod-resource-mod [data-fieldtype='editor']").closest('.fitem');
+                        var showdescription = $("#page-mod-resource-mod [id='id_showdescription']").closest('.fitem');
                         $("#page-mod-resource-mod .snap-form-advanced #id_modstandardelshdr .fcontainer").append(description);
                         $("#page-mod-resource-mod .snap-form-advanced #id_modstandardelshdr .fcontainer").append(showdescription);
 
                         // Assignment - put due date in required.
-                        var duedate = $("#page-mod-assign-mod [for='id_duedate']").closest('.form-group');
+                        var duedate = $("#page-mod-assign-mod [for='id_duedate']").closest('.fitem');
                         $("#page-mod-assign-mod .snap-form-required .fcontainer").append(duedate);
-
-                        // Move availablity at the top of advanced settings.
-                        var availablity = $('#id_visible').closest('.form-group').addClass('snap-form-visibility');
-                        var label = $(availablity).find('label');
-                        var select = $(availablity).find('select');
-                        $(label).insertBefore(select);
-
-                        // SHAME - rewrite visibility form lang string to be more user friendly.
-                        $(label).text(M.util.get_string('visibility', 'theme_snap') + ' ');
 
                         if ($("#page-course-edit").length) {
                             // We are in course editing form.
@@ -1262,14 +1310,16 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                                 });
                         }
 
+                        // Move availablity at the top of advanced settings.
+                        var availablity = $('#id_visible').closest('.fitem').addClass('snap-form-visibility');
                         $('.snap-form-advanced').prepend(availablity);
 
                         // Add save buttons.
-                        var savebuttons = $('form[id^="mform1"] > .form-group:last');
+                        var savebuttons = $('form[id^="mform1"] > .fitem:last');
                         $(mainForm).append(savebuttons);
 
                         // Expand collapsed fieldsets when editing a mod that has errors in it.
-                        var errorElements = $('.form-group.has-danger');
+                        var errorElements = $('.fitem.has-danger');
                         if (onModSettings && errorElements.length) {
                             errorElements.closest('.collapsible').removeClass('collapsed');
                         }
@@ -1323,7 +1373,7 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                     }
                     // Remove disabled attribute for section name for topics format.
                     if (onSectionSettings) {
-                        var sectionName = $("#page-course-editsection.format-topics .form-group #id_name_value");
+                        var sectionName = $("#page-course-editsection.format-topics .fitem #id_name_value");
                         if (sectionName.length) {
                             let sectionNameIsDiabled = document.getElementById('id_name_value').hasAttribute("disabled");
                             if (sectionNameIsDiabled) {
@@ -1394,8 +1444,16 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                         $('#mr-nav').removeClass('headroom--pinned').addClass('headroom--unpinned');
                     }
 
+                    // The ai_drawer module is necessary if and only if the AI Summary button is present on the page.
+                    const AISummaryButton = document.querySelector('button.btn[aria-controls="ai-drawer"]');
+                    if (AISummaryButton) {
+                        require(['theme_snap/ai_drawer'], function(aiDrawer) {
+                            aiDrawer.init();
+                        });
+                    }
+
                     // Re position submit buttons for forms when using mobile mode at the bottom of the form.
-                    var savebuttonsformrequired = $('div[role=main] .mform div.snap-form-required fieldset > div.form-group.fitem');
+                    var savebuttonsformrequired = $('div[role=main] .mform div.snap-form-required fieldset > div.fitem');
                     var width = $(window).width();
                     if (width < 767) {
                         $('.snap-form-advanced').append(savebuttonsformrequired);
@@ -1403,8 +1461,8 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
 
                     // Fix a position for the new 'Send content change notification' setting.
                     if ( $('.path-mod.theme-snap #id_coursecontentnotification').length ) {
-                        const notificationCheck = document.getElementById('id_coursecontentnotification')
-                            .closest(".form-group.fitem");
+                        const notificationElement = document.getElementById('id_coursecontentnotification');
+                        const notificationCheck = notificationElement ? notificationElement.closest(".fitem") : null;
                         const submitButtons = $('.snap-form-required [data-groupname="buttonar"]');
                         if (notificationCheck !== null && submitButtons.length) {
                             notificationCheck.classList.add('snap_content_notification_check');
@@ -1414,16 +1472,27 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
 
                     // Checking if the snap form required fieldset is not being displayed.
                     const snapFormFsRequired = $('.snap-form-required > fieldset');
-                    if(snapFormFsRequired && snapFormFsRequired.hasClass('d-none')){
-                        // Now its safe to remove  the columns class from the form so the visible fieldset takes the full space.
-                        const visibleFieldset = $('.snap-form-advanced > fieldset').not('.d-none');
-                        $(visibleFieldset).parent().removeClass('col-md-4');
+                    if (
+                      snapFormFsRequired &&
+                      snapFormFsRequired.hasClass("d-none")
+                    ) {
+                      // Now its safe to remove  the columns class from the form so the visible fieldset takes the full space.
+                      const visibleFieldset = $(
+                        ".snap-form-advanced > fieldset"
+                      ).not(".d-none");
+                      $(visibleFieldset).parent().removeClass("col-md-4");
 
-                        // Making sure that the save buttons are displayed.
-                        const notificationCheck = document.getElementById('id_coursecontentnotification')
-                            .closest(".form-group.fitem");
-                        $('.snap-form-advanced').append(notificationCheck);
-                        $('.snap-form-advanced').append(savebuttonsformrequired);
+                      // Making sure that the save buttons are displayed.
+                      const notificationElement = document.getElementById(
+                        "id_coursecontentnotification"
+                      );
+                      const notificationCheck = notificationElement
+                        ? notificationElement.closest(".fitem")
+                        : null;
+                      if (notificationCheck !== null) {
+                        $(".snap-form-advanced").append(notificationCheck);
+                      }
+                      $(".snap-form-advanced").append(savebuttonsformrequired);
                     }
 
                     // Hide Blocks editing on button from the Intelliboard Dashboard page in Snap.
@@ -1449,34 +1518,6 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                         setHomeCourseFavourite('set-favourite');
                     }
 
-                    // Snapify format site on the front page if needed.
-                    // TODO: Maybe remove this whole piece if MDL-82188 ever gets resolved in our favor.
-                    if ($('body#page-site-index.format-site').length) {
-                        var frontPageActivities = document.querySelector('div[role="main"] ul.section');
-                        var frontPageActObserver = new MutationObserver(function() {
-                            $('div[role="main"] ul.section > li[id^="module"]').each(function() {
-                                if (!$(this).hasClass('snap-activity') && !$(this).hasClass('snap-asset')) {
-                                    let id = $(this).attr('id');
-                                    let moduleid = id.match(/\d+$/)[0];
-                                    $(this).hide(); // Hide it while we finish.
-
-                                    ajax.call([
-                                        {
-                                            methodname: 'theme_snap_course_module',
-                                            args: {cmid: moduleid},
-                                            done: function(response) {
-                                                let html = $.parseHTML(response.html);
-                                                $('#' + id).replaceWith(html[0]);
-                                            }
-                                        }
-                                    ]);
-                                }
-                            });
-                        });
-                        var frontPageActConfig = {childList: true};
-                        frontPageActObserver.observe(frontPageActivities, frontPageActConfig);
-                    }
-
                     // Move My courses button to be centered in the home page.
                     if ($('body#page-site-index.theme-snap .frontpage-course-list-enrolled .paging-morelink').length) {
                         var moreCoursesButton = document.querySelector('.frontpage-course-list-enrolled .paging-morelink');
@@ -1499,10 +1540,6 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                             userCompetency.parent().addClass('ms-4');
                         }
                     }
-
-                    // To update the edit toggle URL in course page.
-                    editToggleURL('topics');
-                    editToggleURL('weeks');
 
                     // Modify Hide / Show / Delete actions for blocks in coursetools section to be redirected to the
                     // course dashboard instead of course main page.
@@ -1527,8 +1564,79 @@ define(['jquery', 'core/log', 'core/aria', 'theme_snap/headroom', 'theme_snap/ut
                         }
                     }
 
-                    // Add the correct section return to the modchooser.
-                    util.modchooserSectionReturn();
+                    // (Temporary) solution for the error presented in INT-21265
+                    document.addEventListener('click', function(e) {
+                        const regradeBtn = e.target.closest('#regradeattempts');
+                        if (!regradeBtn) {
+                            return;
+                        }
+
+                        let helpIcon = regradeBtn.dataset.helpIcon;
+
+                        // Replace <button> with <a> in data-help-icon to match what Core expects
+                        if (typeof helpIcon === 'string' && helpIcon.includes('<button')) {
+                            helpIcon = helpIcon.replace('<button', '<a').replace('</button>', '</a>');
+                            regradeBtn.dataset.helpIcon = helpIcon;
+                        }
+
+                        // Watch for DOM changes to detect the modal
+                        const observer = new MutationObserver((mutations, obs) => {
+                            const modal = document.querySelector('.modal.show');
+                            if (!modal) {
+                                return;
+                            }
+
+                            const helpAnchor = modal.querySelector('.modal-title a.iconhelp');
+                            if (helpAnchor) {
+                                // Activate Bootstrap popover manually
+                                $(helpAnchor).popover({
+                                    html: true,
+                                    container: 'body',
+                                    trigger: 'focus',
+                                });
+
+                                // Stop observing
+                                obs.disconnect();
+                            }
+                        });
+
+                        observer.observe(document.body, {
+                            childList: true,
+                            subtree: true,
+                        });
+                    });
+                    // If editing is inactive, the snap button to create subsections directly accesses the service
+                    document.addEventListener('click', async function(e) {
+                        const btn = e.target.closest('.btn-add-subsection');
+                        if (!btn) {
+                            return;
+                        }
+                        e.preventDefault();
+
+                        const courseId = btn.dataset.courseid;
+                        const sectionId = btn.dataset.sectionid;
+                        const modName = btn.dataset.modname;
+                        const editingActive = document.body.classList.contains('editing');
+                        if (!editingActive) {
+                            await ajax.call([{
+                                methodname: 'core_courseformat_new_module',
+                                args: {
+                                    courseid: courseId,
+                                    modname: modName,
+                                    targetsectionid: sectionId,
+                                    targetcmid: null
+                                }
+                            }])[0];
+                            window.location.reload();
+                        }
+                    });
+
+                    if (courseConfig.newmodid) {
+                        sessionStorage.setItem('newMod', courseConfig.newmodid);
+                    } else {
+                        sessionStorage.removeItem('newMod');
+                    }
+
                 });
                 accessibility.snapAxInit();
                 messages.init();

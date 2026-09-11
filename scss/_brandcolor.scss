@@ -23,6 +23,29 @@
 // Everything affected by brand-color choice to allow per category customisation.
 // Wrap in a .theme-snap class so that it can be replaced with .category-x later.
 
+@function _brightness($c) {
+  @return (red($c) * 0.299) + (green($c) * 0.587) + (blue($c) * 0.114);
+}
+
+@function fix-background($bg, $against, $min-diff: 60) {
+  $diff: abs(_brightness($bg) - _brightness($against));
+
+  // Good contrast → keep original
+  @if $diff >= $min-diff {
+    @return $bg;
+  }
+
+  // Bad contrast → auto-fix background
+  @if _brightness($against) > 128 {
+    // light foreground → darken background
+    @return darken($bg, 40%);
+  } @else {
+    // dark foreground → lighten background
+    @return lighten($bg, 40%);
+  }
+}
+
+
 $darker-grey-btn: #999;
 $dark-grey-btn: #adadad;
 $light-grey-btn: #ccc;
@@ -72,7 +95,7 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
         }
     }
 
-    a:not(.btn):not(.dropdown-item):not(.badge-info):not(._blanktarget):not(.snap-due-date, .snap-open-date, .snap-opened-date):not(.yui3-button):not(.mast-breadcrumb):not(.active):not(.disabled):not(.dimmed),
+    a:not(.btn):not(.dropdown-item):not(.badge-info):not(._blanktarget):not(.snap-due-date, .snap-open-date, .snap-opened-date, .path-course-view .unread):not(.yui3-button):not(.mast-breadcrumb):not(.active):not(.disabled):not(.dimmed),
     .btn-link,
     .fake-link {
         color: $brand-primary;
@@ -80,6 +103,38 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
         &:focus,
         &:hover {
             color: darken($brand-primary, 8%);
+        }
+    }
+
+    #snap-header #nav-local-accessibility-popover-container {
+        &.focused-icon {
+            outline: $brand-primary solid 3px;
+            @if $nav-bg != rgba(255, 255, 255, .95) {
+                        outline: fix-background($nav-color, $brand-primary, 60) solid 3px;
+            }
+            height: 100%;
+            border-radius: .5rem;
+        }
+
+        #local-accessibility-buttoncontainer {
+            position: inherit;
+            button:focus {
+                border: none;
+                outline: none;
+                box-shadow: none;
+            }
+        }
+
+        div.local-accessibility-panel {
+            div.card-header {
+                background-color: $brand-primary !important;
+            }
+
+            div.card-body {
+                input[type="range"] {
+                    accent-color: $brand-primary;
+                }
+            }
         }
     }
 
@@ -92,8 +147,16 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
         color: #fff !important;
     }
 
-    .snap-dropzone-label:hover .fake-link {
-        color: darken($brand-primary, 8%);
+    .snap-dropzone-label {
+      &:hover {
+        .fake-link {
+          color: darken($brand-primary, 8%);
+        }
+      }
+
+      .snap-icon {
+        color: $brand-primary;
+      }
     }
 
     .snap-dropzone .activityiconcontainer {
@@ -108,6 +171,9 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
     .dropdown-toggle {
         &:focus {
             outline: 3px solid $brand-primary;
+            @if $nav-bg != rgba(255, 255, 255, .95) {
+                        outline: 3px auto fix-background($nav-color, $brand-primary, 60);
+            }
         }
 
         &:active,
@@ -195,10 +261,6 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
         &:hover {
             color: darken($brand-primary, 8%);
         }
-    }
-
-    hr {
-        background-color: $brand-primary;
     }
 
     // Calendar
@@ -384,6 +446,17 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
         color: $brand-primary;
     }
 
+    .snap-visible-section.courseindex-section > .courseindex-item,
+    &:not(.format-topics,.format-weeks) .courseindex-section[aria-selected='true'] > .courseindex-item,
+    &:not(.format-topics,.format-weeks) .courseindex-section > .courseindex-item[aria-selected='true'] {
+        background-color: $brand-primary;
+        a.courseindex-chevron,
+        a.courseindex-link,
+        span {
+            color: white!important;
+        }
+    }
+
     &#page-site-index #page-header,
     &#page-login-index #page,
     .news-article-image,
@@ -393,21 +466,15 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
         background-color: $brand-primary;
     }
 
-    #course-toc .snap-visible-section .chapter-title {
-        background-color: $brand-primary;
-        opacity: 0.8;
-    }
-
-    .mast-image {
-        .breadcrumb {
-            li,
-            li:before,
-            > li + li:before,
-            a {
-                color: $brand-primary;
-            }
+    .breadcrumb {
+        li,
+        li:before,
+        > li + li:before,
+        a {
+            color: $brand-primary;
         }
     }
+
 
     #snap-pm-mobilemenu {
         a {
@@ -454,6 +521,22 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
             border-bottom: 1px solid $brand-primary;
             outline: 3px auto $brand-primary;
         }
+    }
+
+    [id*="courseindex"].drawer-left .btn.drawertoggle {
+      background-color: $brand-primary;
+    }
+
+    .snap-drawer-mobile-header {
+        background-color: $brand-primary;
+    }
+
+    .courseindex .courseindex-section.current .current-badge.bg-primary {
+      background-color: color-mix(in srgb, $brand-primary, white 25%) !important;
+    }
+
+    .courseindex .courseindex-section.current {
+      border-left: solid 3px $brand-primary;
     }
 
     // workaround for #notices with buttons outside the div#notice
@@ -754,10 +837,6 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
             color: $nav-button-color;
         }
 
-        .dropdown-toggle::after {
-            color: $nav-button-color;
-        }
-
         #snap-home:not(.logo) {
             color: $nav-button-color;
         }
@@ -861,16 +940,44 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
     .snap-dropzone > .snap-dropzone-label {
         &:focus {
             outline: 3px auto $brand-primary;
+            @if $nav-bg != rgba(255, 255, 255, .95) {
+                        outline: 3px auto fix-background($nav-color, $brand-primary, 60);
+            }
         }
     }
 
-    #snap-coverimagecontrol > label.btn-outline-primary.btn-sm {
+    .modal-dialog.modal-dialog-centered.modal-dialog-scrollable {
+        outline: none;
+    }
+
+    #snap-coverimagecontrol > label.btn-outline-primary.btn-sm,
+    .bulkEnable {
         background-color: white !important;
+        color: $brand-primary!important;
         &:hover,
         &:focus {
             box-shadow: none;
             background-color: $brand-primary !important;
             color: #fff !important;
+            i, span  {
+                color: #fff !important;
+            }
+        }
+    }
+
+    .sticky-footer-content.bulkactions,
+    .bulkEnable.btn {
+        color: $brand-primary;
+        border-color: $brand-primary;
+        span, i, label {
+            color: $brand-primary;
+        }
+    }
+    // Adjust color of bulk checkbox.
+    &.bulkenabled .activity-item .bulkselect,
+    &.bulkenabled .bulkactions {
+        input {
+            accent-color: $brand-primary;
         }
     }
 
@@ -914,10 +1021,10 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
         }
     }
 
-    &#page-course-view-topics,
-    &#page-course-view-weeks {
+    &.path-course-view.format-topics,
+    &.path-course-view.format-weeks {
         .sk-fading-circle {
-            margin: 100px auto;
+            margin: 300px auto;
             width: 5em;
             height: 5em;
             position: relative;
@@ -1111,11 +1218,12 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
 
             ul.snap-navbar-content {
                 li.nav-item {
-                    div.dropdown-menu {
+                    div.dropdown-menu, ul.dropdown-menu {
                         background-color: rgba($brand-primary, 0.8);
                     }
 
                     a {
+                        height: 50px;
                         color: $custom-menu-text-color;
 
                         &:focus,
@@ -1150,6 +1258,15 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
         box-shadow: none;
         background-color: transparent;
         color: white;
+    }
+
+    &.editing .activity-item:hover:not(:has(.activity:hover)),
+    &.editing .activity-item.selected {
+      outline: 2px solid $brand-primary;
+    }
+
+    .course-section .section-summary-activities .icon {
+      color: $brand-primary;
     }
 
     .section_footer {
@@ -1394,6 +1511,15 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
             }
         }
     }
+    .action-menu {
+        .dropdown-subpanel.content-displayed,
+        .btn.btn-icon:hover {
+            background-color: unset;
+        }
+        .dropdown-toggle {
+            display: block;
+        }
+    }
 
     div.bg-color-primary {
         background-color: $brand-primary !important;
@@ -1448,6 +1574,11 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
                 }
             }
         }
+
+        #page-header.mast-image h1 a {
+            color: $brand-primary;
+            text-shadow: none;
+        }
     }
 
     #tertiary-navigation {
@@ -1498,6 +1629,26 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
             background-color: $brand-primary;
         }
     }
+    .divider:has(.btn.add-content:hover) hr {
+        border-color: $brand-primary;
+    }
+    .divider .divider-content .btn.add-content {
+        z-index: auto;
+        color: white;
+        &.active,
+        &:active,
+        &:hover,
+        &:focus,
+        &:focus-within {
+            opacity: 1;
+        }
+        opacity: 0.6;
+        background-color: $brand-primary;
+        border-radius: 0.2rem;
+        i.icon {
+            color: white;
+        }
+    }
 }
 
 /*
@@ -1516,4 +1667,38 @@ $custom-menu-text-color: rgb(255, 255, 255) !default; // Need to define this wit
 */
 :root {
     --brand-primary: #{$brand-primary};
+}
+// -------------------------
+// Tiles course format.
+// -------------------------
+body#page-course-view-tiles.theme-snap {
+    #course-addsection {
+        a.add-section {
+          color: $brand-primary;
+        }
+
+        .btn.add-section:hover,
+        .btn.add-section:focus,
+        .btn.add-section:focus-visible {
+          border: solid $brand-primary;
+          outline: none;
+        }
+
+        .btn.add-section{
+          border: 2px dashed $brand-primary;
+        }
+    }
+
+    li.section,
+    li.activity.subsection {
+        .sectionname {
+            color: $brand-primary;
+        }
+        .btn.btn-icon.icons-collapse-expand:hover {
+          outline: 2px solid $brand-primary;
+        }
+        .btn.btn-icon.icons-collapse-expand {
+          color: $brand-primary;
+        }
+    }
 }

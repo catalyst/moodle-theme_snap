@@ -32,7 +32,7 @@ Feature: When the moodle theme is set to Snap, ajax failures due to log outs / e
     And the following config values are set as admin:
       | advancedfeedsenable | 0 | theme_snap |
 
-  @javascript
+  @javascript @_alert
   Scenario: Teacher get's login status warning when trying to manage sections if logged out.
     Given the following "courses" exist:
       | fullname | shortname | category | format | initsections |
@@ -44,14 +44,16 @@ Feature: When the moodle theme is set to Snap, ajax failures due to log outs / e
     And I log in as "teacher"
     And I am on the course main page for "C1"
     When I follow "Section 2"
+    And I wait until the page is ready
     Then "#section-2" "css_element" should exist
     And I log out via a separate window
-    When I click on "#section-2 .snap-visibility.snap-hide" "css_element"
+    When I click on "#section-2 .snap-visibility[data-action='sectionHide']" "css_element"
     Then "body#page-login-index" "css_element" should exist
     # Test logout msg when highlighting section
     And I log in as "teacher"
     And I am on the course main page for "C1"
     When I follow "Section 2"
+    And I wait until the page is ready
     Then "#section-2" "css_element" should exist
     And I log out via a separate window
     And I highlight section 2
@@ -60,14 +62,21 @@ Feature: When the moodle theme is set to Snap, ajax failures due to log outs / e
     And I log in as "teacher"
     And I am on the course main page for "C1"
     When I follow "Section 2"
+    And I wait until the page is ready
+    And I switch edit mode in Snap
     And I follow "Move \"Section 2\""
-    Then I should see "Moving \"Untitled Section\"" in the "#snap-footer-alert" "css_element"
+    Then I should see "Move Section 2 after" in the "Move section" "dialogue"
+    And I click on "Close" "button" in the "Move section" "dialogue"
     And I follow "Section 4"
+    And I wait until the page is ready
     And I log out via a separate window
-    When I follow "Place section \"Untitled Section\" before section \"Section 4\""
-    Then I should see "You are logged out"
+    And I follow "Move \"Section 4\""
+    And I click on "Section 5" "link" in the "Move section" "dialogue"
+    And I wait to be redirected
+    # The user should be in login page now
+    Then "body#page-login-index" "css_element" should exist
 
-  @javascript
+  @javascript @_alert
   Scenario: Teacher get's login status warning when trying to manage assets if logged out.
     Given the following "courses" exist:
       | fullname | shortname | category | format | initsections |
@@ -82,27 +91,30 @@ Feature: When the moodle theme is set to Snap, ajax failures due to log outs / e
     Given I log in as "teacher"
     And I am on the course main page for "C1"
     When I follow "Section 1"
-    And I click on ".snap-activity[data-type='Assignment'] button.snap-edit-asset-more" "css_element"
+    And I wait until the page is ready
+    And I open "Test assignment" actions menu
     And I log out via a separate window
-    And I click on ".snap-activity[data-type='Assignment'] a.js_snap_hide" "css_element"
+    And I choose "Hide" in the open action menu
     And I wait until the page is ready
     # Test logout msg when attempting to duplicate asset
-    Given I log in as "teacher"
-    And I am on the course main page for "C1"
+    Then "body#page-login-index" "css_element" should exist
+    # Given I log in as "teacher"
+    And I am on the "Course 1" course page logged in as teacher
     When I follow "Section 1"
-    And I click on ".snap-activity[data-type='Assignment'] button.snap-edit-asset-more" "css_element"
+    And I wait until the page is ready
+    And I open "Test assignment" actions menu
     And I log out via a separate window
     And I wait until the page is ready
-    When I click on ".snap-activity[data-type='Assignment'] a.js_snap_duplicate" "css_element"
+    And I choose "Hide" in the open action menu
     Then "body#page-login-index" "css_element" should exist
     # Test logout msg when attempting to move asset
-    Given I log in as "teacher"
-    And I am on the course main page for "C1"
+    And I am on the "Course 1" course page logged in as teacher
     And I follow "Section 1"
+    And I wait until the page is ready
     Then "#section-1" "css_element" should exist
-    And I click on ".snap-activity.modtype_assign .snap-edit-asset-more" "css_element"
-    And I click on ".snap-activity.modtype_assign .snap-asset-move" "css_element"
-    Then I should see "Moving \"Test assignment\""
+    And I switch edit mode in Snap
+    And I open "Test assignment" actions menu
+    And I choose "Move" in the open action menu
     And I log out via a separate window
-    When I click on "li#section-1 li.snap-drop.asset-drop div.asset-wrapper" "css_element"
-    Then I should see "You are logged out"
+    And I click on "Section 5" "link" in the "Move activity" "dialogue"
+    Then "body#page-login-index" "css_element" should exist

@@ -113,6 +113,12 @@ body.path-site .block.block_settings {
     margin-bottom: 1em;
 }
 
+[dir="rtl"] .block.block_settings {
+    li {
+        display: block;
+    }
+}
+
 /* Reset margin on setting block. */
 .block_settings {
     > .card-body {
@@ -219,10 +225,9 @@ body.path-site .block.block_settings {
             #snap-feeds-menu-forumposts {
                 .userinitials {
                     float: left;
-                    width: 40px;
-                    height: 40px;
-                    font-size: unset;
-                    margin: 0.3em 1em 0 0.3em;
+                    width: 36px;
+                    height: 36px;
+                    margin: 0.3em 1.5em 0 0.5em;
                 }
             }
             #snap-feeds-menu-messages .snap-media-body p {
@@ -267,7 +272,7 @@ body.path-site .block.block_settings {
     }
 
     // Snap Feeds Mobile Menu
-    @media screen and (max-width: 992px) {
+    @media screen and (max-width: 480px) {
         &.state-visible {
             width: 100%;
             z-index: 1030;
@@ -371,6 +376,12 @@ body.path-site .block.block_settings {
                 }
             }
         }
+    }
+    .snap-feeds .userinitials.snap-feeds-forumpost-userinitials {
+        float: left;
+        width: 36px;
+        height: 36px;
+        margin: 0.3em 1.5em 0 0.5em;
     }
 }
 
@@ -612,15 +623,43 @@ body.path-site .block.block_settings {
         }
     }
     // Hide the Turn editing on button from the block settings.
-    a[href*="edit=on"],
-    a[href*="edit=off"],
-    a[href*="edit=1"],
-    a[href*="edit=0"] {
-        display: none;
+    #frontpagesettings_group {
+
+        a[href*="edit=on"],
+        a[href*="edit=off"],
+        a[href*="edit=1"],
+        a[href*="edit=0"] {
+            display: none;
+        }
     }
 
     #settingsnav {
         padding-top: 0!important;
+    }
+
+    #close-block-settings {
+        display: none;
+        position: absolute;
+        right: 1em;
+        font-size: 1.5rem;
+        opacity: .5;
+    }
+}
+
+// This allow us to test this on Behat sites.
+@media screen and (max-width: 600px) {
+    body.snap_drawer_open.behat-site #page-content .block_settings {
+        #close-block-settings {
+            display: block;
+        }
+    }
+}
+
+@media screen and (max-width: 480px) {
+    body.snap_drawer_open #page-content .block_settings {
+        #close-block-settings {
+            display: block;
+        }
     }
 }
 

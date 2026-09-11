@@ -24,15 +24,15 @@
 /**
  * JS code to assign attributes and expected behavior for elements in the Dom regarding accessibility.
  */
-define(['jquery', 'core/str', 'core/event', 'core_form/events', 'theme_boost/bootstrap/tools/sanitizer', 'theme_boost/popover'],
-    function($, str, Event, FormEvents, { DefaultWhitelist }) {
+define(['jquery', 'core/str', 'core/event', 'core_form/events', 'theme_boost/bootstrap/tools/sanitizer', 'theme_boost/popover',
+    'core/moremenu', 'core/log'],
+    function($, str, Event, FormEvents, { DefaultWhitelist }, Popover, coreMoreMenu, log) {
         return {
             snapAxInit: function(localJouleGrader, allyReport, blockReports, localCatalogue) {
-
                 /**
                  * Module to get the strings from Snap to add the aria-label attribute to new accessibility features.
                  */
-                str.get_strings([
+                let stringRequests = [
                     {key: 'accessforumstringdis', component: 'theme_snap'},
                     {key: 'accessforumstringmov', component: 'theme_snap'},
                     {key: 'calendar', component: 'calendar'},
@@ -51,8 +51,16 @@ define(['jquery', 'core/str', 'core/event', 'core_form/events', 'theme_boost/boo
                     {key: 'badges', component: 'core_badges'},
                     {key: 'coursereport', component: 'report_allylti'},
                     {key: 'pluginname', component: 'local_catalogue'},
-                    {key: 'experimental', component: 'block_reports'}
-                ]).done(function(stringsjs) {
+                    {key: 'experimental', component: 'block_reports'},
+                    {key: 'themesettingstitle', component: 'theme_snap'},
+                ];
+                str.get_strings(stringRequests).done(function(stringsjs) {
+                    const stringsMap = {};
+                    stringRequests.forEach((item, index) => {
+                        stringsMap[item.key] = stringsjs[index];
+                    });
+                    module.applyPageHeadingAccessibility(stringsMap);
+
                     if ($("#page-mod-forum-discuss")) {
                         $("div[data-content='forum-discussion'] select.custom-select.singleselect")
                         .attr("aria-label", stringsjs[0]);
@@ -119,10 +127,18 @@ define(['jquery', 'core/str', 'core/event', 'core_form/events', 'theme_boost/boo
                     $('div[role="main"] div.sitetopic ul.section.img-text').attr('role', 'presentation');
                 });
 
+                var module = this;
                 $(document).ready(function() {
                     // Add necessary attributes to needed DOM elements to new accessibility features.
                     $("#page-mod-data-edit input[id*='url']").attr("type", "url").attr("autocomplete", "url");
+                    str.get_string('makingaselectionpagechange', 'theme_snap').done(function(label) {
+                        module.injectScreenReader(label, '#jump-to-activity');
+                    });
                     $("#moodle-blocks aside#block-region-side-pre a.sr-only.sr-only-focusable").attr("tabindex", "-1");
+                    // Remove tabindex="-1" set by block_settings renderer on interactive elements.
+                    $(".block_settings .block_tree").find("li, a, button, p, span").removeAttr("tabindex");
+                    // Ensure all links in block_settings tree are keyboard navigable.
+                    $(".block_settings .block_tree a").attr({"role": "button", "tabindex": "0"});
 
                     // Focus first invalid input after a submit is done.
                     $('.mform').submit(function() {
@@ -245,7 +261,7 @@ define(['jquery', 'core/str', 'core/event', 'core_form/events', 'theme_boost/boo
                             let last = null;
                             if (drawer) {
                                 let drawerFocusables = Array.from(drawer.querySelectorAll(focusables)).filter(el => {
-                                    return el.checkVisibility();
+                                    return el.offsetParent !== null;
                                 });
                                 first = drawerFocusables[0];
                                 last = drawerFocusables[drawerFocusables.length - 1];
@@ -285,9 +301,32 @@ define(['jquery', 'core/str', 'core/event', 'core_form/events', 'theme_boost/boo
                                 .filter(el => {
                                     return el !== null;
                                 });
-                            let beforeDrawers = document.querySelector('#snap-custom-menu-header div > ul > li:nth-child(2) > a');
-                            beforeDrawers = beforeDrawers ?
-                                beforeDrawers : document.querySelector('#snap-custom-menu-header > nav > div > ul > li > a');
+                            // Dynamically get the last link from the custom menu header
+                            let beforeDrawers =
+                              document.querySelectorAll(
+                                "#snap-custom-menu-header div > ul > li:not(.d-none) > a"
+                              ) ||
+                              document.querySelectorAll(
+                                "#snap-custom-menu-header > nav > ul > li:not(.d-none) > a"
+                              );
+                            beforeDrawers = beforeDrawers.length > 0 ? beforeDrawers[beforeDrawers.length - 1] : null;
+                            // If custom menu header doesn't exist, get the last focusable item in snap-header
+                            if (!beforeDrawers) {
+                                let focusables = '[tabindex]:not([tabindex="-1"]),' +
+                                    ' a[href]:not([tabindex]),' +
+                                    ' button:not([disabled]):not([tabindex]),' +
+                                    ' input:not([disabled]):not([tabindex]),' +
+                                    ' textarea:not([disabled]):not([tabindex]),' +
+                                    ' select:not([disabled]):not([tabindex]), details:not([tabindex])';
+                                let snapHeader = document.getElementById('snap-header');
+                                if (snapHeader) {
+                                    let headerFocusables = Array.from(snapHeader.querySelectorAll(focusables)).filter(el => {
+                                        return el.offsetParent !== null;
+                                    });
+                                    beforeDrawers = headerFocusables.length > 0 ?
+                                        headerFocusables[headerFocusables.length - 1] : null;
+                                }
+                            }
                             let afterDrawers = document.querySelector('#snap-sidebar-menu > button.snap-sidebar-menu-trigger');
 
                             let adminDrawerFirst = null;
@@ -387,6 +426,150 @@ define(['jquery', 'core/str', 'core/event', 'core_form/events', 'theme_boost/boo
                         document.addEventListener('keydown', drawerTabListener);
                     }
                     setDrawersTabOrder();
+
+                    /**
+                     * Persist the active admin settings tab across page reloads.
+                     */
+                    function persistAdminSettingsTabs() {
+                        const tabContainer = document.getElementById('snap-admin-tabs');
+                        if (!tabContainer) {
+                            return;
+                        }
+                        const section = new URLSearchParams(window.location.search).get('section') || 'default';
+                        const storageKey = 'snap_admin_activetab_' + section;
+                        const savedTab = sessionStorage.getItem(storageKey);
+
+                        if (savedTab) {
+                            const tabLink = tabContainer.querySelector('.nav-link[href="#' + savedTab + '"]');
+                            if (tabLink) {
+                                const currentActive = tabContainer.querySelector('.nav-link.active');
+                                if (currentActive) {
+                                    currentActive.classList.remove('active');
+                                }
+                                const currentPane = document.querySelector('.tab-content .tab-pane.active');
+                                if (currentPane) {
+                                    currentPane.classList.remove('active');
+                                }
+                                tabLink.classList.add('active');
+                                const pane = document.getElementById(savedTab);
+                                if (pane) {
+                                    pane.classList.add('active');
+                                }
+                                tabLink.focus();
+                            }
+                        }
+
+                        tabContainer.addEventListener('click', function(e) {
+                            const link = e.target.closest('.nav-link');
+                            if (link) {
+                                const tabName = link.getAttribute('href').replace('#', '');
+                                sessionStorage.setItem(storageKey, tabName);
+                            }
+                        });
+                    }
+                    persistAdminSettingsTabs();
+
+                    // Local accessibility plugin button from Snap header
+                    const accessibilityIcon = document.getElementById('local-accessibility-buttoncontainer');
+                    const headerButtonsContainer = document.querySelector('#snap-header > div.float-end');
+                    if (accessibilityIcon && headerButtonsContainer.querySelector('.usermenu')) {
+                        const lineSeparator = document.querySelector('#snap-header div.snap_line_separator');
+                        const accessibilityWrapper = document.createElement('div');
+                        accessibilityWrapper.id = 'nav-local-accessibility-popover-container';
+                        const accessibilityPanel = document.querySelector('div.local-accessibility-panel');
+                        accessibilityPanel.classList.remove('border-primary');
+                        accessibilityPanel.classList.remove('card');
+                        accessibilityIcon.querySelector('button').addEventListener('focus', () => {
+                            accessibilityWrapper.classList.add('focused-icon');
+                        });
+                        accessibilityIcon.querySelector('button').addEventListener('blur', () => {
+                            accessibilityWrapper.classList.remove('focused-icon');
+                        });
+                        const userMenuLink = document.querySelector('.usermenu a');
+                        if (userMenuLink) {
+                            userMenuLink.addEventListener('click', () => {
+                                accessibilityPanel.style.display = 'none';
+                            });
+                        }
+
+                        if (lineSeparator) {
+                            lineSeparator.parentElement.insertBefore(accessibilityWrapper, lineSeparator);
+                        } else {
+                            headerButtonsContainer.insertBefore(accessibilityWrapper, lineSeparator);
+                        }
+                        accessibilityWrapper.appendChild(accessibilityIcon);
+                        accessibilityWrapper.appendChild(accessibilityPanel);
+
+                        let animationTimeout = null;
+                        let isClosingAnim = false;
+
+                        /**
+                         * Handles opening animation for accessibility panel.
+                         */
+                        const handlePanelOpen = () => {
+                            // Clear any pending close animations
+                            if (animationTimeout) {
+                                clearTimeout(animationTimeout);
+                                animationTimeout = null;
+                            }
+
+                            accessibilityPanel.style.display = 'block';
+                            requestAnimationFrame(() => {
+                                accessibilityPanel.classList.add('is-visible');
+                            });
+                        };
+
+                        /**
+                         * Handles closing animation for accessibility panel.
+                         */
+                        const handlePanelClose = () => {
+                            if (isClosingAnim) {
+                                return;
+                            }
+                            isClosingAnim = true;
+                            accessibilityPanel.style.display = 'block';
+
+                            requestAnimationFrame(() => {
+                                accessibilityPanel.classList.remove('is-visible');
+                                animationTimeout = setTimeout(() => {
+                                    if (isClosingAnim && !accessibilityPanel.classList.contains('is-visible')) {
+                                        accessibilityPanel.style.display = 'none';
+                                    }
+                                    isClosingAnim = false;
+                                    animationTimeout = null;
+                                }, 300);
+                            });
+                        };
+
+                        // Required to apply the required transition in the Snap header
+                        const observer = new MutationObserver(() => {
+                            const isDisplayed = window.getComputedStyle(accessibilityPanel).display !== 'none';
+                            const isVisible = accessibilityPanel.classList.contains('is-visible');
+                            if (isDisplayed && !isVisible) {
+                                handlePanelOpen();
+                            }
+                            if (!isDisplayed && isVisible) {
+                                handlePanelClose();
+                            }
+                        });
+
+                        observer.observe(accessibilityPanel, {attributes: true, attributeFilter: ['style']});
+                    }
+
+                    const snapCustomheader = document.getElementById('snap-custom-menu-header');
+                    const menu = document.querySelector('.snap-navbar-content');
+                    if (menu && snapCustomheader) {
+                        try {
+                            coreMoreMenu(menu);
+                        } catch (e) {
+                            menu.classList.add('flex-nowrap');
+                            log.error(e);
+                        } finally {
+                            if (snapCustomheader.classList.contains('invisible')) {
+                                snapCustomheader.classList.remove('invisible');
+                            }
+                        }
+                    }
                 });
 
                 /**
@@ -488,76 +671,6 @@ define(['jquery', 'core/str', 'core/event', 'core_form/events', 'theme_boost/boo
             },
 
             /**
-             * Custom form error event handler to manipulate the bootstrap markup and show
-             * nicely styled errors in an mform focusing the necessary elements in the form.
-             * @param {string} elementid
-             */
-            enhanceform: function(elementid) {
-                const element = document.getElementById(elementid);
-                if (!element) {
-                    return;
-                }
-
-                element.addEventListener(FormEvents.eventTypes.formFieldValidationFailed, function(event) {
-                    event.preventDefault();
-                    const msg = event.detail?.message || '';
-
-                    const parent = element.closest('.form-group');
-                    if (!parent) {
-                        return;
-                    }
-                    const feedback = parent.querySelector('.form-control-feedback');
-                    const invalidInput = parent.querySelector('input.form-control.is-invalid');
-
-                    let activeElement = element;
-
-                    // Sometimes (atto) we have a hidden textarea backed by a real contenteditable div.
-                    if (element.tagName === 'TEXTAREA') {
-                        const contentEditable = parent.querySelector('[contenteditable]');
-                        if (contentEditable) {
-                            activeElement = contentEditable;
-                        }
-                    }
-
-                    if (msg !== '') {
-                        parent.classList.add('has-danger');
-                        parent.dataset.clientValidationError = "true";
-                        activeElement.classList.add('is-invalid');
-
-                        if (feedback) {
-                            activeElement.setAttribute('aria-describedby', feedback.id);
-                            activeElement.setAttribute('aria-invalid', 'true');
-                            if (invalidInput) {
-                                invalidInput.setAttribute('tabindex', '0');
-                            }
-                            feedback.innerHTML = msg;
-
-                            // Only focus if there is no other element with focus error already.
-                            if (!document.querySelector('[data-error-focused="true"]')) {
-                                activeElement.setAttribute('data-error-focused', 'true');
-                                setTimeout(function() {
-                                    activeElement.focus();
-                                    activeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                }, 0);
-                            }
-                        }
-                    } else {
-                        if (parent.dataset.clientValidationError === "true") {
-                            parent.classList.remove('has-danger');
-                            delete parent.dataset.clientValidationError;
-                            activeElement.classList.remove('is-invalid');
-                            activeElement.removeAttribute('aria-describedby');
-                            activeElement.setAttribute('aria-invalid', 'false');
-
-                            if (feedback) {
-                                feedback.style.display = 'none';
-                            }
-                        }
-                    }
-                });
-            },
-
-            /**
              * Override the options from theme_boost/loader::enablePopovers to enhance accesibility (VPAT).
              */
             setManualPopovers: function() {
@@ -628,8 +741,37 @@ define(['jquery', 'core/str', 'core/event', 'core_form/events', 'theme_boost/boo
                 $(btnSelector).on('hidden.bs.popover', function () {
                     $(this).attr('aria-expanded', false);
                 });
-            }
+            },
 
+            injectScreenReader: function(label, targetSelector) {
+                var target = document.querySelector(targetSelector);
+                if (!target) {
+                    return;
+                }
+                var span = document.createElement('span');
+                span.className = 'sr-only';
+                span.textContent = label;
+                target.parentNode.insertBefore(span, target);
+            },
+
+            applyPageHeadingAccessibility: function (stringsMap) {
+                const bodyId = document.body.id || "";
+                const pageTypeConfigs = {
+                    "page-admin-setting-themesettingsnap": {
+                        ariaLabel: stringsMap['themesettingstitle'],
+                        ariaLevel: "1"
+                    },
+                };
+                const configForPage = pageTypeConfigs[bodyId];
+                 if (configForPage) {
+                     const heading = document.querySelector("#page-header h1") || document.querySelector("h1");
+                     if (heading) {
+                        heading.setAttribute("aria-label", configForPage.ariaLabel);
+                        heading.setAttribute("role", "heading");
+                        heading.setAttribute("aria-level", configForPage.ariaLevel);
+                     }
+                 }
+            }
         };
     }
 );

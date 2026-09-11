@@ -54,8 +54,9 @@ Feature: When the moodle theme is set to Snap, activity restriction tags are sho
     Given I log in as "teacher1"
     And I am on the course main page for "C1"
     And I follow "Section 1"
-    And I click on ".snap-activity.modtype_assign .snap-edit-asset-more[title='More Options \"Test assignment1\"']" "css_element"
-    And I click on ".snap-activity.modtype_assign .snap-edit-asset[aria-label='Edit activity Test assignment1']" "css_element"
+    And I wait until the page is ready
+    And I open "Test assignment1" actions menu
+    And I click on "Edit settings" "link" in the "Test assignment1" activity
     And I wait until the page is ready
     And I click on "//fieldset[@id=\"id_availabilityconditionsheader\"]" "xpath_element"
     And I click on "//button[text()=\"Add restriction...\"]" "xpath_element"
@@ -63,7 +64,9 @@ Feature: When the moodle theme is set to Snap, activity restriction tags are sho
     And I set the field with xpath "//span[@class=\"pe-3\"][text()=\"Grade\"]//following-sibling::span//select" to "Test assignment2"
     Then I click on "//input[@id=\"id_submitbutton2\"]" "xpath_element"
     And I wait until the page is ready
+    And I am on the course main page for "C1"
     And I follow "Section 1"
+    And I wait until the page is ready
     And I click on "//a[@class='snap-conditional-tag']" "xpath_element"
     Then I should see "You have a grade in Test assignment2"
     Examples:
@@ -80,20 +83,23 @@ Feature: When the moodle theme is set to Snap, activity restriction tags are sho
     Given I log in as "teacher1"
     And I am on the course main page for "C1"
     And I follow "Section 1"
-    And I click on ".snap-activity.modtype_assign .snap-edit-asset-more[title='More Options \"Test assignment1\"']" "css_element"
-    And I click on ".snap-activity.modtype_assign .snap-edit-asset[aria-label='Edit activity Test assignment1']" "css_element"
+    And I wait until the page is ready
+    And I open "Test assignment1" actions menu
+    And I click on "Edit settings" "link" in the "Test assignment1" activity
     And I wait until the page is ready
     And I click on "//fieldset[@id=\"id_availabilityconditionsheader\"]" "xpath_element"
     And I click on "//button[text()=\"Add restriction...\"]" "xpath_element"
     And I click on "//button[@id=\"availability_addrestriction_grade\"]" "xpath_element"
     And I set the field with xpath "//span[@class=\"pe-3\"][text()=\"Grade\"]//following-sibling::span//select" to "Test assignment2"
     Then I click on "//button[text()=\"Add restriction...\"]" "xpath_element"
-    And I click on "//button[@id=\"availability_addrestriction_group\"]" "xpath_element"
+    And I click on "Group" "button" in the "Add restriction..." "dialogue"
     And I set the field with xpath "//span[@class=\"pe-3\"][text()=\"Group\"]//following-sibling::span//select" to "Group1"
     And I set the field with xpath "//span[@class=\"accesshide\"][text()=\"Required restrictions \"]//following-sibling::select" to "all"
     Then I click on "//input[@id=\"id_submitbutton2\"]" "xpath_element"
     And I wait until the page is ready
+    And I am on the course main page for "C1"
     And I follow "Section 1"
+    And I wait until the page is ready
     And I click on "//a[@class='snap-conditional-tag']" "xpath_element"
     Then I should see "You have a grade in Test assignment2"
     Then I should see "You belong to Group1"
@@ -111,20 +117,23 @@ Feature: When the moodle theme is set to Snap, activity restriction tags are sho
     Given I log in as "teacher1"
     And I am on the course main page for "C1"
     And I follow "Section 1"
-    And I click on ".snap-activity.modtype_assign .snap-edit-asset-more[title='More Options \"Test assignment1\"']" "css_element"
-    And I click on ".snap-activity.modtype_assign .snap-edit-asset[aria-label='Edit activity Test assignment1']" "css_element"
+    And I wait until the page is ready
+    And I open "Test assignment1" actions menu
+    And I click on "Edit settings" "link" in the "Test assignment1" activity
     And I wait until the page is ready
     And I click on "//fieldset[@id=\"id_availabilityconditionsheader\"]" "xpath_element"
     And I click on "//button[text()=\"Add restriction...\"]" "xpath_element"
     And I click on "//button[@id=\"availability_addrestriction_grade\"]" "xpath_element"
     And I set the field with xpath "//span[@class=\"pe-3\"][text()=\"Grade\"]//following-sibling::span//select" to "Test assignment2"
     Then I click on "//button[text()=\"Add restriction...\"]" "xpath_element"
-    And I click on "//button[@id=\"availability_addrestriction_group\"]" "xpath_element"
+    And I click on "Group" "button" in the "Add restriction..." "dialogue"
     And I set the field with xpath "//span[@class=\"pe-3\"][text()=\"Group\"]//following-sibling::span//select" to "Group1"
     And I set the field with xpath "//span[@class=\"accesshide\"][text()=\"Required restrictions \"]//following-sibling::select" to "any"
     Then I click on "//input[@id=\"id_submitbutton2\"]" "xpath_element"
     And I wait until the page is ready
+    And I am on the course main page for "C1"
     And I follow "Section 1"
+    And I wait until the page is ready
     And I click on "//a[@class='snap-conditional-tag']" "xpath_element"
     Then I should see "You have a grade in Test assignment2"
     Then I should see "You belong to Group1"

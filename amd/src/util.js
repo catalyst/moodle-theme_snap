@@ -145,34 +145,19 @@ define(['jquery', 'core/templates', 'core/str'], function($, templates, str) {
         },
 
         /**
-         * Adds the correct section return to the modchooser, so use it only where it makes sense.
+         * Adds a close button to the Block settings so it can be closed in mobile resolutions.
          */
-        modchooserSectionReturn: function() {
-            if (document.querySelector('body.path-course') !== null) {
-                let choosers = document.querySelectorAll('button.section-modchooser-link');
-                if (choosers.length !== 0) {
-                    choosers.forEach(el => {
-                        el.addEventListener('click', e => {
-                            let sectionNum = e.target.closest('[data-sectionid]').getAttribute('data-sectionid');
-                            let modchooserObserver = new MutationObserver(function() {
-                                let loadedModules = document.querySelectorAll('[role="menuitem"]' +
-                                    ' [data-region="chooser-option-info-container"]' +
-                                    ' a[data-action="add-chooser-option"]');
-                                if (loadedModules.length > 0) {
-                                    loadedModules.forEach(el => {
-                                        let link = el.href + '&sr=' + sectionNum;
-                                        el.setAttribute('href', link);
-                                    });
-                                }
-                            });
-                            let modchooserObserverConfig = {
-                                childList: true,
-                                subtree: true,
-                            };
-                            modchooserObserver.observe(document.body, modchooserObserverConfig);
-                        });
-                    });
-                }
+        addCloseButtonToBlockSettings: function() {
+            const settingsBlock = document.querySelector('.block_settings');
+            if (settingsBlock) {
+                const closeBlockButton = document.createElement('button');
+                closeBlockButton.className = 'btn icon-no-margin';
+                closeBlockButton.id = 'close-block-settings';
+                closeBlockButton.setAttribute('data-action', 'closedrawer');
+                const buttonContent = document.createElement('span');
+                buttonContent.textContent = '×';
+                closeBlockButton.appendChild(buttonContent);
+                settingsBlock.firstElementChild.prepend(closeBlockButton);
             }
         }
     };

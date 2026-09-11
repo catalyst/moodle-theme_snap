@@ -54,7 +54,7 @@ echo $OUTPUT->custom_menu_spacer();
 ?>
 <div id="page-header" class="clearfix <?php echo $mastimage; ?>">
     <?php if ($PAGE->pagetype !== 'site-index') { ?>
-        <nav class="breadcrumb-nav" aria-label="breadcrumbs"><?php echo $OUTPUT->snapnavbar($mastimage); ?></nav>
+        <nav class="breadcrumb-nav" aria-label="breadcrumbs"><?php echo $OUTPUT->navbar(); ?></nav>
     <?php }
         if ($carousel) {
             // Front page carousel.
@@ -62,20 +62,9 @@ echo $OUTPUT->custom_menu_spacer();
         } else {
             // Front page banner image.
     ?>
-        <div id="page-mast">
         <?php
-            echo $OUTPUT->page_heading();
-            echo $OUTPUT->course_header();
-            // Content bank for Snap.
-            if ($PAGE->pagetype === 'contentbank') {
-                echo $OUTPUT->snap_content_bank();
-            }
-        ?>
-        </div>
-        <?php
-            if ($this->page->user_is_editing() && $PAGE->pagetype == 'site-index') {
-                echo $OUTPUT->cover_image_selector();
-            }
+            echo $OUTPUT->snap_page_header();
+
         } // End else.
         if ($PAGE->pagetype == 'admin-search') {
             echo implode('', $PAGE->get_header_actions());

@@ -95,8 +95,9 @@ Feature: When the moodle theme is set to Snap, cover image can be set for site a
     Then I log in as "admin"
     And I go to "Site administration > Development" in snap administration
     And I follow "Purge caches"
-    And I press "Purge all caches"
-    Then I should see "All caches were purged"
+    When I set the field "All file and miscellaneous caches" to "1"
+    And I click on "Purge selected caches" "button" in the "#fitem_id_purgeselectedcaches" "css_element"
+    Then I should see "The selected caches were purged"
     And I reload the page
     # Test cover image can only be set on main course page
     And I am on the course main page for "C1"
@@ -194,6 +195,7 @@ Feature: When the moodle theme is set to Snap, cover image can be set for site a
       | name  | category | idnumber |
       | Cat 1 | 0        | CAT1     |
     And I log in as "admin"
+    And I change window size to "large"
     And I am on the course category page for category with idnumber "CAT1"
     Then I should see "Change cover image"
     And I should not see cover image in page header
@@ -282,3 +284,31 @@ Feature: When the moodle theme is set to Snap, cover image can be set for site a
     And I wait until ".btn.ok" "css_element" is visible
     And I click on ".btn.ok" "css_element"
     Then I should not see "This image could have contrast problems due not compliance with the WCAG 2.0 minimum ratio value 4.5:1"
+
+    @javascript
+    Scenario: snap-coverimagecontrol is visible when a section is created in the course.
+      Given the following "courses" exist:
+        | fullname | shortname | category | format |
+        | Course 1 | C1        | 0        | topics |
+    When I log in as "admin"
+    And I am on the course main page for "C1"
+    And I follow "Create a new section"
+    And I set the field "newsection" to "New name"
+    And I press "Create section"
+    And I wait until the page is ready
+    Then I should see "Change cover image"
+
+  @javascript
+  Scenario: Cover image control location on course and home pages
+    Given the following "courses" exist:
+      | fullname | shortname | category | format |
+      | Course 1 | C1        | 0        | topics |
+    When I log in as "admin"
+    And I am on site homepage
+    And I switch edit mode in Snap
+    Then I should see "Change cover image"
+    And "#page-mast #snap-coverimagecontrol" "css_element" should not exist
+    And "#snap-coverimagecontrol" "css_element" should exist
+    And I am on the course main page for "C1"
+    Then I should see "Change cover image"
+    And "#page-mast #snap-coverimagecontrol" "css_element" should exist

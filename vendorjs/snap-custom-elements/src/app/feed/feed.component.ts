@@ -3,7 +3,6 @@ import {Component, OnInit, ViewEncapsulation, Input, HostListener} from '@angula
 import {FeedService} from '../feed.service';
 import {FeedItem} from "../feed-item";
 import {animate, query, stagger, style, transition, trigger} from "@angular/animations";
-import {StringService} from "../string.service";
 import {MoodleService} from "../moodle.service";
 import {ErrorReporterService} from "../error-reporter.service";
 import {FeedErrorModalComponent} from "../feed-error-modal/feed-error-modal.component"
@@ -15,7 +14,21 @@ import {MoodleRes} from "../moodle.res";
       <h2>{{ title }}</h2>
       <div id="{{ elemId }}" [@growIn]="feedItemTotal">
           <div class="snap-media-object feeditem {{feedItem.extraClasses}}" *ngFor="let feedItem of feedItems" [attr.data-from-cache]="feedItem.fromCache" [attr.data-mod-name]="feedItem.modName">
-              <img *ngIf="feedItem.iconUrl !== ''" src="{{feedItem.iconUrl}}" alt="{{feedItem.iconDesc}}" [className]="feedItem.iconClass" [attr.data-mod-name]="feedItem.modName">
+              <img *ngIf="feedItem.hasUserPic; else userInitials"
+                   src="{{feedItem.iconUrl}}"
+                   alt="{{feedItem.iconDesc}}"
+                   [className]="feedItem.iconClass"
+                   [attr.data-mod-name]="feedItem.modName">
+              <ng-template #userInitials>
+                <span
+                  class="userinitials snap-feeds-forumpost-userinitials"
+                  [attr.title]="feedItem.title"
+                  [attr.aria-label]="feedItem.title"
+                  role="img"
+                  [attr.data-mod-name]="feedItem.modName">
+                  {{ feedItem.userInitials }}
+                </span>
+              </ng-template>
               <div class="snap-media-body">
                   <a [attr.href]="feedItem.urlParameter ? feedItem.actionUrl + '&snapfeedsclicked=on' : feedItem.actionUrl">
                       <h3>
@@ -34,13 +47,13 @@ import {MoodleRes} from "../moodle.res";
       </div>
       <div class="alert alert-danger alert-block fade in" role="alert" *ngIf="feedError === true && !retryFeed">
         <button type="button" class="close" data-dismiss="alert" aria-label="Close">×</button>
-        {{strings['errorgettingfeed']}}
+        {{ 'errorgettingfeed' | moodleString | async }}
         <a
           *ngIf="errorMsg && feedError"
           class="view-more-error"
           (click)="reportError(errorMsg)"
         >
-          {{strings['viewmore']}}
+          {{ 'viewmore' | moodleString | async }}
         </a>
       </div>
       <a *ngIf="viewMoreEnabled && nextPage >= 0" href="javascript: void(0);" class="snap-sidebar-menu-more"
@@ -109,14 +122,11 @@ export class FeedComponent implements OnInit {
   feedError: boolean;
   retryFeed: boolean;
   errorMsg: string;
-  strings: string[];
-
 
   private feedItemCache: FeedItem[];
 
   constructor(
     private feedService: FeedService,
-    private stringService: StringService,
     private moodleService: MoodleService,
     private errorReporterService: ErrorReporterService,
   ) {
@@ -127,7 +137,6 @@ export class FeedComponent implements OnInit {
     this.moodleService.wwwRoot = this.wwwRoot;
     this.feedError = false;
     this.errorMsg = null;
-    this.getStrings();
 
     // Initialize caching for feed service.
     this.initFeedService();
@@ -306,16 +315,6 @@ export class FeedComponent implements OnInit {
 
     return str.replace(/\&[\w\d\#]{2,5}\;/g, function (m) {
       return map[m];
-    });
-  }
-
-  getStrings() {
-    this.strings = [];
-    this.stringService.getStrings([
-      'viewmore',
-      'errorgettingfeed'
-    ]).subscribe(strings => {
-      this.strings = strings;
     });
   }
 

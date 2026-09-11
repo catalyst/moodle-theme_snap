@@ -68,8 +68,6 @@ img.spacer,
 .coursebox .content .coursefile,
 .coursebox .content .teachers,
 .coursebox.remotecoursebox .remotecourseinfo,
-.section .activity .availabilityinfo,
-.section .activity .contentafterlink,
 .course-content ul.topics li.section .content,
 .course-content ul.weeks li.section .content,
 #page-course-index-category .generalbox.info,
@@ -504,7 +502,7 @@ body:not(.snap-js-loaded) .js-only {
     }
 
     100% {
-        transform: matrix(1, 0, 0, 1, 0, -600);
+        transform: matrix(1, 0, 0, 1, 0, -785);
     }
 }
 
@@ -590,16 +588,52 @@ blockquote {
     @extend .blockquote;
 }
 
-// Although this is kinda general, we need to leave like it is,
-// because Snap is using these width and heights for some designs.
+// This styles avoid images to get outside it's parent element.
+// For example in login page (INT-21717)
 img {
     max-width: 100%;
-    height: auto;
+    max-height: 100%;
 }
 
 // Stop images shrinking to nothing on Chrome
 table img:not(.activityicon) {
     min-width: 12px;
+}
+
+// Styling for bulk actions in Snap.
+.theme-snap .sticky-footer-content.bulkactions {
+    position: static;
+    margin: 0 0.5em;
+    ul.actions {
+        list-style: none;
+    }
+    .form-check {
+        display: block;
+    }
+}
+.theme-snap.path-course-view.editing {
+    &.format-weeks, &.format-topics {
+        #section-0 .bulkEnable {
+            float: unset;
+        }
+    }
+}
+.theme-snap .bulkEnable {
+    vertical-align: text-bottom;
+    float: right;
+}
+
+// Adjust position and size of bulk checkbox.
+.theme-snap.bulkenabled .activity-item .bulkselect {
+    margin-left: -3rem;
+    input {
+        width: 18px;
+        height: 18px;
+    }
+}
+// Give sticky footer a bigger size.
+.show-drawer-left .stickyfooter .sticky-footer-content-wrapper {
+    margin-left: 30%;
 }
 
 table.results td.graph > img {
@@ -657,6 +691,7 @@ i.icon,
 p.tree_item:before {
     color: #999;
 }
+
 p.tree_item.hasicon i.nav-missing-icon:before {
     content: '■'; // Where settings nav icon is missing use this.
 }
@@ -739,10 +774,6 @@ body#page-mod-resource-view.path-mod-resource.pagelayout-frametop {
     height: 80%;
 }
 
-.mediaplugin_videojs > div {
-    max-width: none !important;
-}
-
 .media-responsive {
     width: 100%;
     display: block;
@@ -762,22 +793,10 @@ body#page-mod-resource-view.path-mod-resource.pagelayout-frametop {
     display: block;
 }
 
-// Responsive video for HTML5 only.
-video {
-    width: 100% !important;
-    height: auto !important;
-}
-
 li {
     -webkit-column-break-inside: avoid;
     page-break-inside: avoid;
     break-inside: avoid;
-}
-
-hr {
-    height: 1px;
-    margin: 2em 2%;
-    border: 0;
 }
 
 .block .content hr {
@@ -960,15 +979,6 @@ a.yui3-button,
 }
 
 #page-site-index .section-modchooser-link {
-    display: flex !important;
-    flex-direction: column;
-    text-align: center;
-    padding: 1em 8.5em !important;
-
-    @media (max-width: 576px) {
-        padding: 1em 2em !important;
-    }
-
     .activity-add-text {
         color: $brand-primary;
     }
@@ -979,14 +989,11 @@ a.yui3-button,
     display: block;
     width: 32px;
     height: 32px;
-    margin-bottom: 0.5em;
     background: transparent url("[[pix:theme|move_here]]") no-repeat center center;
     background-size: contain;
 }
 
 #page-site-index .sitetopic .divider {
-    margin-top: 4.5rem !important;
-
     hr {
         background-color: initial;
     }
@@ -1065,11 +1072,6 @@ a.yui3-button,
 // -------------------------
 // Snap theme helper classes
 // -------------------------
-
-.published-status {
-    opacity: 0.75;
-    font-size: $font-size-sm;
-}
 
 .userpicture,
 .message_stream_user_picture_icon {
@@ -1245,9 +1247,23 @@ footer #moodle-footer
 // -------------------------
 // Mr.nav - he's there, fixed to the top of your page
 // -------------------------
+$mr-nav-zindex: 1052;
+
+.tox-fullscreen {
+    #mr-nav {
+        z-index: 1050; // Behind the editor when its fullscreen.
+    }
+}
 
 #mr-nav {
     #snap-header {
+        nav#snap-navbar-header {
+            display: flex;
+            box-sizing: border-box;
+            .divider.border-start {
+                display: none;
+            }
+        }
         padding: .5em 4%;
         padding-bottom: 0;
         background-color: $nav-bg;
@@ -1282,7 +1298,7 @@ footer #moodle-footer
         }
     }
 
-    z-index: 1052;
+    z-index: $mr-nav-zindex;
     background-color: $body-bg;
     top: 0;
 
@@ -1293,16 +1309,6 @@ footer #moodle-footer
         animation-timing-function: ease-in-out;
         animation-duration: 0.4s;
         animation-fill-mode: forwards;
-    }
-
-    &.headroom--pinned {
-
-        // firefox no like this animation :(
-        /*
-        animation-name: snap-drop;
-        animation-timing-function: cubic-bezier(.694, .0482, .335, 1);
-        animation-duration: 0.33s;
-        */
     }
 
     .popover-region-notifications > div > .icon {
@@ -1634,19 +1640,59 @@ footer #moodle-footer
     }
 }
 
-#page {
+body > #page {
     margin: 0;
     padding: 0;
     position: relative;
     left: 0;
     transition: all 0.4s 0s ease;
-    // When admin block is open
-    &.offcanvas {
-        left: -315px;
-    }
+    // When right drawers are open
+    &.offcanvas,
     &.show-drawer-right {
-        left: -315px;
+        @include media-breakpoint-up(lg) {
+            margin-right: 365px !important;
+        }
     }
+    // In tiles format, we need to make sure overlay takes available space
+    div#format_tiles_overlay {
+        min-height: 100% !important;
+    }
+
+    // When Course Index is open.
+    &.show-drawer-left {
+        @include media-breakpoint-up(lg) {
+            #snap-course-wrapper > .row {
+                padding-left: 19.5em;
+            }
+        }
+
+        @media (min-width: 1346px) {
+            #snap-course-wrapper > .row {
+                padding-left: 20%;
+            }
+        }
+
+        // Make sure Course content has minimum height, when TOC is open.
+        #snap-course-wrapper {
+            min-height: 100vh;
+        }
+
+        // Hide toggledrawer when TOC is open.
+        .drawer-toggler {
+            display: none;
+        }
+    }
+    // Hide empty Core HTML rendered.
+    #topofscroll #page-content {
+        display: none;
+    }
+}
+
+@media (min-width: 1346px) {
+  .drawer.drawer-left {
+    width: 30%;
+    max-width: 30%;
+  }
 }
 
 // Styles when the custom menu is enabled.
@@ -1654,6 +1700,9 @@ body.contains-snap-custom_menu-spacer {
     .breadcrumb-nav {
         @include media-breakpoint-up(md) {
             margin-top: -.75em;
+        }
+        @include media-breakpoint-down(sm) {
+            margin-top: -1.5em;
         }
     }
 }
@@ -1684,6 +1733,7 @@ body.contains-snap-custom_menu-spacer {
     max-width: 100%;
 }
 
+#page-blocks-conduit-view #region-main,
 #page-course-reset #region-main {
     max-width: 100%;
 }
@@ -1741,6 +1791,29 @@ header#page-header
     }
 }
 
+body#page-site-index #moodle-page #page-header {
+    aspect-ratio: 3;
+    #page-mast {
+        margin: 0;
+        position: relative;
+        top: 17%;
+        left: 4%;
+    }
+}
+
+body.path-course, body#page-course-index-category {
+    #moodle-page #page-header.mast-image {
+        min-height: 0;
+        aspect-ratio: 6;
+    }
+    .page-context-header {
+        margin-top: -.75rem;
+    }
+}
+body.path-course #moodle-page #page-header {
+  aspect-ratio: unset;
+}
+
 // Breadcrumb - not really a breadcrumb like on the web, but something moodley
 // -------------------------
 
@@ -1762,14 +1835,28 @@ header#page-header
     }
 }
 
-.breadcrumb {
-    background-color: transparent;
-    padding: 0;
-    font-size: $font-size-sm;
-    display: block;
-    li.breadcrumb-item {
-        display: inline-block;
-    }
+.theme-snap {
+  .breadcrumb {
+      background-color: transparent;
+      padding: 0;
+      font-size: 0.65rem;
+      display: block;
+      margin-bottom: 0.5rem;
+
+      li.breadcrumb-item {
+          display: inline-block;
+          a {
+              @include media-breakpoint-down(sm) {
+                  white-space: unset;
+              }
+
+          }
+      }
+  }
+}
+// Hide the "Site pages" breadcrumb item from My courses view.
+#page-my-index.page-mycourses .breadcrumb .breadcrumb-item:nth-child(2) {
+  display: none;
 }
 
 // SHAME - what is this?
@@ -1778,17 +1865,6 @@ header#page-header
 .breadcrumb-button {
     margin-top: 0;
 }
-
-// -------------------------
-// Header in course layout (we have extra stuff)
-// -------------------------
-/***************
-	div#page-mast
-		nav#course-toc
-				ol #chapters
-				search stuff SHAME
-
- ****************************/
 
 // If the page has an image - courses & categories.
 .mast-image {
@@ -1799,10 +1875,6 @@ header#page-header
             color: white;
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
         }
-    }
-    // Add a bg colur to the toc in page header.
-    #course-toc {
-        background-color: rgba(255, 255, 255, 0.95);
     }
 }
 
@@ -1912,8 +1984,6 @@ header#page-header
 
     #page-header,
     .carousel-slide {
-        // background-color: $brand-primary; customisable
-        min-height: 405px;
         position: relative;
         padding: 0;
         margin: 0;
@@ -1931,15 +2001,6 @@ header#page-header
         padding: 1em 2%;
         margin: 10em 4% 1em;
         word-break: break-word;
-    }
-}
-
-@include media-breakpoint-up(lg) {
-    #page-site-index {
-        #page-header,
-        .carousel-slide {
-            min-height: 600px;
-        }
     }
 }
 
@@ -2945,6 +3006,7 @@ ul.events-new + ul.events-underway {
     border-bottom: 1px solid $gray;
     padding: 1.5em 0;
     margin: 1em 0;
+    display: block;
 }
 
 .que .info,
@@ -3442,11 +3504,7 @@ table#user-grades tr.avg td.cell {
     display:none;
 }
 
-// TODO short term fix for Snap disappearing header interfering with scrolling Gradebook
 #page-grade-report-grader-index {
-    header#mr-nav {
-        animation-name: none;
-    }
     section#region-main {
         display: grid;
     }
@@ -3481,6 +3539,9 @@ table#user-grades tr.avg td.cell {
         tr {
             white-space: normal;
         }
+    }
+    #region-main .tertiary-navigation .navitem .page-toggler a {
+        z-index: auto;
     }
 }
 #page-local-joulegrader-view {
@@ -3539,7 +3600,8 @@ table#user-grades tr.avg td.cell {
 .path-admin-report,
 .pagelayout-admin,
 #page-backup-import,
-#page-course-editsection {
+#page-course-editsection,
+#page-question-edit {
     #region-main {
         width: 100%;
         max-width: 100%;
@@ -4387,6 +4449,10 @@ table th img.iconhelp {
 }
 
 /* Featured category and course link. */
+.frontpage-course-list-all .snap-home-course .favouriteicon {
+    display: none;
+}
+
 .snap-featured-category,
 .snap-featured-course,
 .snap-home-course {
@@ -4462,9 +4528,21 @@ table th img.iconhelp {
                 }
             }
         }
+
+
         .favouriteicon .fa-regular {
             display: inline;
-            -webkit-text-stroke: 1px $brand-primary;
+            text-shadow:
+                    -2px 0 $brand-primary,
+                    2px 0 $brand-primary,
+                    0 -2px $brand-primary,
+                    0 2px $brand-primary,
+                    -1.5px -1.5px $brand-primary,
+                    -1.5px 1.5px $brand-primary,
+                    1.5px -1.5px $brand-primary,
+                    1.5px 1.5px $brand-primary;
+            color: white;
+            font-weight: 900;
         }
     }
     &:not(:hover) {
@@ -4519,8 +4597,15 @@ table th img.iconhelp {
         }
     }
     .favouriteicon .fa-solid {
-        text-shadow: 1px 1px 3px black;
-        -webkit-text-stroke: 1px white;
+        text-shadow:
+                -2px 0 white,
+                2px 0 white,
+                0 -2px white,
+                0 2px white,
+                -1.5px -1.5px white,
+                -1.5px 1.5px white,
+                1.5px -1.5px white,
+                1.5px 1.5px white;
         color: $brand-primary;
     }
     .favouriteicon .fa-regular {
@@ -4801,11 +4886,20 @@ button.snap-icon-toggle {
 }
 
 // Cover image control.
-#snap-coverimagecontrol {
-    float: right;
-    margin-left: 1em;
+#page-header.snap-category-header.mast-image,
+.pagelayout-course #page-header {
+    #page-mast {
+        display: flex;
+    }
+}
+#page-site-index #page-mast {
     display: inline-block;
+}
+
+#snap-coverimagecontrol {
+    margin: auto 0 auto auto;
     opacity: 0;
+    flex-shrink: 0;
     @include alakazam;
 
     .btn {
@@ -4831,13 +4925,6 @@ label[for="snap-coverfiles"],
 #snap-changecoverimageconfirmation button {
     position: relative;
     display: none;
-}
-
-body:not(.pagelayout-coursecategory) {
-    label[for="snap-coverfiles"],
-    #snap-changecoverimageconfirmation button {
-        top: -2.5em;
-    }
 }
 
 #page-course-view-topics #page-header.mast-image .alert-warning {
@@ -4869,7 +4956,7 @@ label.state-visible[for="snap-coverfiles"] {
     }
 }
 
-@include media-breakpoint-down(xs) {
+@include media-breakpoint-down(md) {
     label.state-visible[for="snap-coverfiles"] {
         span {
             display: none;
@@ -5150,6 +5237,8 @@ section#region-main {
                 .course-card {
                     border-radius: 0.5rem;
                     transition: transform 0.5s ease;
+                    height: auto !important;
+                    width: auto !important;
                     &:hover {
                         transform: scale(1.05);
                         z-index: 10;
@@ -5379,6 +5468,7 @@ header#mr-nav {
         ul.snap-navbar-content {
             margin: 0;
             padding: 0;
+            flex-wrap: wrap;
             li.nav-item {
                 list-style: none;
                 max-width: 20em;
@@ -5420,6 +5510,9 @@ header#mr-nav {
             }
         }
     }
+    #snap-custom-menu-header div.container-fluid {
+        height: 50px;
+    }
 }
 
 // Snap custom menu fix for IE11.
@@ -5431,12 +5524,12 @@ header#mr-nav {
         max-height: 100%;
     }
 }
-#page-course-view-topics, #page-course-view-weeks, #page-course-index-category {
-    #page-header {
-        min-height: 210px;
-    }
+
+#page-header.mast-image {
+    min-height: 0;
+    aspect-ratio: 6;
 }
-@media (min-width: 992px) {
+@media (min-width: 993px) {
     .theme-snap #snap-header {
         height: 100px;
     }
@@ -5444,7 +5537,6 @@ header#mr-nav {
         padding-top: 30px;
         margin-top: 100px!important;
         background-position: center center;
-        background-size: 100% 100%;
     }
     header#mr-nav div#snap-custom-menu-header {
         display: block;
@@ -5458,6 +5550,25 @@ header#mr-nav {
             margin-top: 150px!important;
         }
     }
+
+    #page-header.mast-image h1 {
+        font-size: 1.5vw;
+    }
+}
+
+@media (min-width: 992px) and (max-width: 1200px) {
+    #page-header.mast-image h1 {
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+    }
+}
+
+@media (width: 992px) {
+    #page-header {
+        padding-top: 40px !important;
+    }
 }
 
 @media (max-width: 992px) {
@@ -5468,13 +5579,15 @@ header#mr-nav {
         padding-top: 30px;
         margin-top: 50px!important;
         background-position: center center;
-        background-size: 100% 100%;
     }
     header#mr-nav div#snap-custom-menu-header {
         display: none;
     }
     footer#moodle-footer div#snap-custom-menu-footer {
         display: block;
+        background-color: #2d2d2d;
+        border-radius: 0.5rem;
+        
         nav.navbar {
             max-height: 100%;
             ul.snap-navbar-content {
@@ -5573,13 +5686,12 @@ li.snap-activity.modtype_folder div[id^="folder_tree"] {
     }
 }
 
-#page-mod-forum-view #mr-nav {
+#page-mod-forum-view.overflow-hidden #mr-nav {
     z-index: -1;
 }
 
 .theme-snap [data-region=right-hand-drawer].drawer:not([data-origin^="message-drawer-toggle-"]) {
     z-index: 12;
-    position: fixed;
     right: 0;
     height: 100%;
     width: 22.3em;
@@ -5593,14 +5705,8 @@ li.snap-activity.modtype_folder div[id^="folder_tree"] {
     }
 }
 
-#page-mod-forum-view.theme-snap [data-region=right-hand-drawer].drawer {
-    position: absolute;
-    z-index: 0;
-}
-
 .theme-snap .snap-drawer-headroom {
     top: 6em;
-    z-index: 1052;
     @media (max-width: 992px) {
         top: 3.5em;
     }
@@ -6087,11 +6193,16 @@ body[id^="page-grade-"] #region-main .container-fluid.tertiary-navigation {
     }
 }
 
+// User tour styles.
 #page-admin-tool-usertours-configure {
     #id_description,
     #id_title {
         width: inherit;
     }
+}
+
+span[data-flexitour="container"]:has(> div[data-role="flexitour-step"]) {
+    z-index: $mr-nav-zindex + 1;
 }
 
 // Fix header position in grader view.
@@ -6471,8 +6582,9 @@ body[id^="page-grade-"] #region-main .container-fluid.tertiary-navigation {
         }
     }
 
-    // Intellicart icon.
-    #nav-intellicart-popover-container .popover-region-toggle.nav-link.icon-no-margin:focus-visible {
+    // Intellicart and Accessibility icons.
+    #nav-intellicart-popover-container .popover-region-toggle.nav-link.icon-no-margin:focus-visible,
+    #nav-local-accessibility-popover-container:has(button:focus-visible) {
         @extend .fa-beat;
         --fa-animation-duration: 0.5s;
         --fa-animation-iteration-count: 1;
@@ -6495,6 +6607,70 @@ body[id^="page-grade-"] #region-main .container-fluid.tertiary-navigation {
         --fa-animation-iteration-count: 1;
         .icon.fa-search {
             -webkit-text-stroke-width: 1px;
+        }
+    }
+    #nav-local-accessibility-popover-container {
+        padding: .12rem .3rem .45rem .3rem;
+        &.focused-icon {
+          height: 100%;
+          border-radius: .5rem;
+        }
+        #local-accessibility-buttoncontainer {
+            position: inherit;
+            button:focus {
+              border: none;
+              outline: none;
+              box-shadow: none;
+            }
+        }
+
+        div.local-accessibility-panel {
+            position: absolute;
+            top: 4rem;
+            right: 11rem;
+            transform-origin: top center;
+            border-radius: calc(0.5rem - 1px) calc(0.5rem - 1px) 0 0;
+            height: fit-content;
+            clip-path: inset(0 0 100% 0);
+            opacity: 0;
+            transition: clip-path 300ms ease, opacity 250ms ease-out;
+            will-change: clip-path, opacity;
+            box-shadow: none !important;
+            &.is-visible {
+              clip-path: inset(0 0 0 0);
+              opacity: 1;
+            }
+            div.card-body {
+                background-color: white;
+                max-height: 70vh;
+
+                a.btn-secondary:hover {
+                  color: white;
+                }
+            }
+            > .card-body {
+              border: 1px solid #ddd;
+              border-top: none;
+              border-radius: 0 0 .6rem .6rem;
+            }
+
+            @media screen and (max-width: 992px) {
+              right: 1rem;
+              left: auto;
+              width: calc(100vw - 2rem);
+              max-width: 73%;
+            }
+            @media screen and (max-width: 600px) {
+              left: 0.1rem;
+              width: calc(100vw - 1rem);
+              max-width: none;
+              min-width: auto;
+            }
+            @media screen and (max-width: 767px) {
+                .card {
+                  margin: 0.5em 0;
+                }
+            }
         }
     }
 }
@@ -6606,4 +6782,289 @@ body#page-mod-assign-grading.path-mod-assign .gradingtable thead tr {
   .tertiary-navigation {
     display: none;
   }
+}
+
+// Course Index CSS Styles from Boost
+.courseindex .courseindex-item {
+    padding: 0.2em 0.5em;
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+}
+.courseindex .courseindex-item .icons-collapse-expand {
+    padding-right: 4px;
+}
+.courseindex .courseindex-item .courseindex-link:hover, .courseindex .courseindex-item .courseindex-link:focus,
+.courseindex .courseindex-item .courseindex-chevron:hover,
+.courseindex .courseindex-item .courseindex-chevron:focus {
+    text-decoration: none;
+}
+
+.courseindex .courseindex-item:hover.draggable, .courseindex .courseindex-item:focus.draggable {
+    cursor: move;
+}
+.courseindex .courseindex-item.dragging {
+    border: 1px solid #b3d9e0;
+    background-color: #e6f2f5;
+}
+.courseindex .courseindex-item.active {
+    background-color: #f8f9fa;
+    border-color: #dee2e6;
+}
+.courseindex .courseindex-item.dimmed .courseindex-link,
+.courseindex .courseindex-item.dimmed .courseindex-chevron {
+    color: #6a737b !important;
+}
+.courseindex .courseindex-item .courseindex-locked {
+    display: none;
+}
+.courseindex .courseindex-item.restrictions .courseindex-locked {
+    display: block;
+}
+.courseindex .courseindex-item .completioninfo {
+    min-width: 24px;
+}
+.courseindex .courseindex-item .completioninfo.completion_complete {
+    color: #357a32;
+}
+.courseindex .courseindex-item .completioninfo.completion_fail {
+    color: #ca3120;
+}
+.courseindex .courseindex-item.indented {
+    margin-left: 1rem;
+}
+.courseindex .courseindex-section {
+    border-left: solid 3px transparent;
+}
+.courseindex .courseindex-section.dragging {
+    border: 1px solid #b3d9e0;
+    background-color: #e6f2f5;
+}
+.courseindex .courseindex-section .current-badge {
+    display: none;
+}
+.courseindex .courseindex-section.current .current-badge {
+    display: inline-block;
+}
+.courseindex .courseindex-section.current .delegated-section .current-badge {
+    display: none;
+}
+.courseindex .courseindex-section.dropready .courseindex-item-content {
+    /* Extra dropzone space */
+    //padding-bottom: 1em;
+}
+.courseindex .courseindex-section .courseindex-sectioncontent .courseindex-item {
+    padding-left: 0.5rem;
+    padding-right: 0;
+    &:has(> .delegated-section) {
+      border-right-width: 0;
+    }
+}
+.courseindex .courseindex-section.delegated-section {
+    width: 100%;
+}
+.courseindex .icon {
+    font-size: 15px;
+}
+.courseindex .d-flex-noedit {
+    display: none;
+}
+.courseindex.editing .d-flex-noedit {
+    display: flex;
+}
+.courseindex .placeholders .rounded-circle {
+    height: 1rem;
+    width: 1rem;
+}
+.courseindex .placeholders .w-100 {
+    height: 1rem;
+    margin: 0.5rem 0;
+}
+
+
+// CSS styles from Boost to Drawer behavior
+.drawer-toggles .drawer-toggler {
+    position: fixed;
+    width: fit-content;
+    z-index: 2;
+}
+.drawer-toggles .drawer-toggler .btn {
+    border-radius: 200px;
+    padding: 16px;
+    background-color: #dee2e6;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: padding 200ms;
+}
+.drawer-toggles .drawer-toggler .btn .icon {
+    width: auto;
+    height: auto;
+}
+.drawer-toggles .drawer-toggler .btn:focus {
+    box-shadow: 0 0 0 0.2rem rgba(15, 108, 191, 0.75);
+}
+.drawer-toggles .drawer-left-toggle {
+    left: 0;
+    top: 50%;
+}
+.drawer-toggles .drawer-left-toggle .btn {
+    border-top-left-radius: 0;
+    border-bottom-left-radius: 0;
+    padding-right: 14px;
+    padding-left: 10px;
+}
+.drawer-toggles .drawer-left-toggle .btn:hover {
+    padding-left: 20px;
+}
+.drawer-toggles .drawer-right-toggle {
+    right: 0;
+}
+.drawer-toggles .drawer-right-toggle .btn {
+    border-top-right-radius: 0;
+    border-bottom-right-radius: 0;
+    padding-right: 10px;
+    padding-left: 14px;
+}
+.drawer-toggles .drawer-right-toggle .btn:hover {
+    padding-right: 20px;
+}
+.format-topics,
+.format-weeks {
+    .drawer.drawer-left.d-print-none .drawercontent {
+        padding-top: .4rem;
+    }
+}
+
+div#snap-course-wrapper #toc-desktop-menu-heading {
+    margin-bottom: 1em;
+    border-bottom: 1px solid #dee2e6;
+    text-transform: capitalize;
+    margin-top: 0.5rem;
+    margin-left: 1rem;
+    #toc-search {
+      font-size: 1rem;
+    }
+    h2, input {
+      font-size: 1.1rem;
+      color: gray;
+    }
+    #toc-search:focus-within {
+        width: 90%;
+    }
+}
+
+.format-weeks .single-section .section-navigation,
+.format-topics .single-section .section-navigation {
+    display: none!important;
+}
+
+li.section.main {
+    list-style: none;
+}
+
+.theme-snap .section {
+    li.activity.modtype_page .activityinstance {
+        margin-bottom: 1em;
+    }
+
+    li.activity .activity-item {
+        display: block;
+        position: relative;
+        padding: 0;
+        margin: 0 auto;
+        height: auto;
+        font-family: $font-family-system;
+        border: 1px solid $gray-lighter;
+        border-top-width: 0.3em;
+        transition: all 0.4s ease-in-out;
+        border-radius: 0.5rem;
+        width: 100%;
+    }
+}
+
+.theme-snap .sitetopic .section-item {
+    border: none;
+    width: 100%;
+}
+
+.theme-snap.editing .section.main:not(.course-section) {
+    .activity:hover,
+    .activity.action-menu-shown,
+    .sectionname:hover {
+        background-color: unset;
+    }
+}
+
+.activity-groupmode-info .groupmode-information {
+    &:hover {
+        background-color: unset;
+    }
+    img {
+        opacity: 0.5;
+    }
+}
+
+#toc-desktop-menu-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  width: 70%;
+}
+
+[id*="courseindex"].drawer-left .drawerheadercontent,
+[id*="courseindex"].drawer-left .drawerheader .drawertoggle {
+  position: static;
+}
+
+[id*="courseindex"].drawer-left .drawerheader {
+  position: absolute;
+  top: 0.65em;
+  right: 0;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding-right: .5rem;
+}
+
+.modal {
+  z-index: 1052; // Higher than Snap header.
+}
+
+// Remove "Powered by Moodle" Core icon and message.
+#page-footer {
+  &.footer-popover .btn-footer-popover,
+  .footer-content-popover {
+    display: none;
+  }
+}
+
+// Fix help button width for snap_hide_in_toc checkbox to match other form elements.
+#id_snap_toc_settingscontainer {
+    .checkbox {
+        max-width: 100% !important;
+        button.iconhelp {
+            min-width: 40px;
+        }
+    }
+}
+
+// This hides TOC chevron for course sections without activities.
+.courseindex-section:not(:has(.courseindex-sectioncontent li)) .courseindex-chevron {
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+// Fixes for dropdown menu in RTL for moodle 4.x.
+.dir-rtl .dropdown-menu {
+    transform: none !important; /* stylelint-disable-line declaration-no-important */
+    top: 100% !important; /* stylelint-disable-line declaration-no-important */
+    right: inherit !important; /* stylelint-disable-line declaration-no-important */
+    min-width: 10.5rem;
+}
+
+code {
+    background-color: #f0f0f0;
+    color: unset;
+    border-radius: 0.5rem;
+    font-style: italic;
+    padding: 0.3rem;
 }

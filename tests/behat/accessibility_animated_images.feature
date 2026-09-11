@@ -36,18 +36,18 @@ Feature: Animated images should be accessible.
       | user     | course | role           |
       | teacher1 | C1     | editingteacher |
 
-  @javascript
+  @javascript @_file_upload
   Scenario: Animated images can be paused, and their animation can be resumed afterwards.
     Given I log in as "teacher1"
     And I am on the course main page for "C1"
+    And I go to section 1 of course "C1"
     And I upload file "testgif_small.gif" to section 1
-    And I follow "Section 1"
-    And I wait "3" seconds
-    And I hover ".snap-animated-image img" "css_element"
-    And I wait until ".anim-pause-button" "css_element" is visible
+    And I reload the page
+    And I click on ".drawer-left .drawertoggle" "css_element"
+    And I hover over the element ".snap-animated-image"
     Then I click on ".anim-pause-button" "css_element"
     And "img[src$='.gif']" "css_element" should not be visible
-    And I hover ".snap-animated-image" "css_element"
+    And I hover over the element ".snap-animated-image"
     And I wait until ".anim-play-button" "css_element" is visible
     And I click on ".anim-play-button" "css_element"
     And "img[src$='.gif']" "css_element" should be visible

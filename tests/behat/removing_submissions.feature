@@ -50,7 +50,7 @@ Feature: When the moodle theme is set to Snap, a student can remove a submitted 
     Given I log in as "student1"
     And I am on "Course 1" course homepage
     And I follow "Section 1"
-    And I click on "//a[@class='mod-link']//p[text()='Assignment One']" "xpath_element"
+    And I click on ".aalink" "css_element" in the "Assignment One" activity
     And I reload the page
     And I press "Add submission"
     And I wait until the page is ready
@@ -60,7 +60,7 @@ Feature: When the moodle theme is set to Snap, a student can remove a submitted 
     Given I log in as "student1"
     And I am on "Course 1" course homepage
     And I follow "Section 1"
-    And I click on "//a[@class='mod-link']//p[text()='Assignment One']" "xpath_element"
+    And I click on ".aalink" "css_element" in the "Assignment One" activity
     Then I should see "Remove submission"
     # Check if submission has file.
     And I press "Edit submission"
@@ -78,7 +78,7 @@ Feature: When the moodle theme is set to Snap, a student can remove a submitted 
     Given I log in as "student1"
     And I am on "Course 1" course homepage
     And I follow "Section 1"
-    And I click on "//a[@class='mod-link']//p[text()='Assignment One']" "xpath_element"
+    And I click on ".aalink" "css_element" in the "Assignment One" activity
     And I reload the page
     And I press "Add submission"
     And I wait until the page is ready
@@ -89,7 +89,7 @@ Feature: When the moodle theme is set to Snap, a student can remove a submitted 
     Given I log in as "student1"
     And I am on "Course 1" course homepage
     And I follow "Section 1"
-    And I click on "//a[@class='mod-link']//p[text()='Assignment One']" "xpath_element"
+    And I click on ".aalink" "css_element" in the "Assignment One" activity
     Then I should see "Remove submission"
     # Chcek if submission has online text.
     And I press "Edit submission"
@@ -107,7 +107,7 @@ Feature: When the moodle theme is set to Snap, a student can remove a submitted 
     Given I log in as "student1"
     And I am on "Course 1" course homepage
     And I follow "Section 1"
-    And I click on "//a[@class='mod-link']//p[text()='Assignment One']" "xpath_element"
+    And I click on ".aalink" "css_element" in the "Assignment One" activity
     And I reload the page
     And I press "Add submission"
     And I wait until the page is ready
@@ -119,7 +119,7 @@ Feature: When the moodle theme is set to Snap, a student can remove a submitted 
     Given I log in as "student1"
     And I am on "Course 1" course homepage
     And I follow "Section 1"
-    And I click on "//a[@class='mod-link']//p[text()='Assignment One']" "xpath_element"
+    And I click on ".aalink" "css_element" in the "Assignment One" activity
     Then I should see "Remove submission"
     # Check if submission has file and online text.
     And I press "Edit submission"

@@ -5445,7 +5445,7 @@ blockquote {
     font-size: 1em;
 }
 
-img {
+img:not([height]) {
     max-width: 100%;
     height: auto;
 }
@@ -5499,10 +5499,6 @@ img.icon {
     vertical-align: middle;
 }
 
-.mediaplugin_videojs > div {
-    max-width: none !important;
-}
-
 .media-responsive {
     width: 100%;
     display: block;
@@ -5534,11 +5530,6 @@ img.icon {
     width: 100%;
     margin: 0 auto;
     max-height: 90vh;
-}
-
-video {
-    width: 100% !important;
-    height: auto !important;
 }
 
 /* mdl hide stuff icon - hide in bs has different meaning*/
@@ -5949,11 +5940,6 @@ fieldset[disabled] #page-site-index .section-modchooser-link .section-modchooser
     width: 100%;
     text-align: center;
     text-decoration: none;
-}
-
-.published-status {
-    opacity: 0.75;
-    font-size: small;
 }
 
 .userpicture,
@@ -10011,11 +9997,11 @@ li.section:focus {
     background-size: 100%;
 }
 
-.snap-section-editing .snap-visibility.snap-show:after {
+.snap-section-editing .snap-visibility[data-action="sectionShow"]:after {
     background-image: url([[pix:core|i/show]]);
 }
 
-.snap-section-editing .snap-visibility.snap-hide:after {
+.snap-section-editing .snap-visibility[data-action="sectionHide"]:after {
     background-image: url([[pix:core|i/hide]]);
 }
 
@@ -12148,12 +12134,6 @@ fieldset[disabled] a#changenumsections .reduce-sections {
 .courseinfo .coursegrade {
     display: block;
     line-height: 2.5em;
-}
-
-.courseinfo .published-status {
-    clear: both;
-    float: left;
-    margin-bottom: -1em;
 }
 
 .courseinfo .completionstatus {

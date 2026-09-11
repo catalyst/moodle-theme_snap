@@ -51,8 +51,8 @@ Feature: Show or hide the expand icon on the Course page based on whether the Pa
     And I log out
     Given I log in as "teacher1"
     And I am on "Course 1" course homepage
-    And I click on ".modtype_page button.snap-edit-asset-more" "css_element"
-    And I follow "Edit settings"
+    And I open "PageName" actions menu
+    And I choose "Edit settings" in the open action menu
     And I set the field "Description" to ""
     And I press "Save and return to course"
     Then ".readmore-container" "css_element" should not exist

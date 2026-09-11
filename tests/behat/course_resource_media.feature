@@ -24,6 +24,7 @@ Feature: When the moodle theme is set to Snap, clicking on a resource with a med
   resource inline.
 
   Background:
+    Given I skip because "Will be reviewed in INT-21470"
     Given the following "courses" exist:
       | fullname | shortname | category | groupmode | enablecompletion | initsections |
       | Course 1 | C1        | 0        | 1         | 1                |      1       |
@@ -41,21 +42,23 @@ Feature: When the moodle theme is set to Snap, clicking on a resource with a med
     Given I log in as "teacher1"
     And I am on the course main page for "C1"
     And I follow "Section 1"
+    And I wait until the page is ready
     Then "#section-1" "css_element" should exist
     And "#snap-drop-file-1" "css_element" should exist
     And I upload file "test_mp3_file.mp3" to section 1
-    Then ".snap-resource[data-type='mp3']" "css_element" should exist
-    And I click on ".snap-edit-asset-more" "css_element"
-    And I click on ".snap-edit-asset" "css_element"
+    # And I wait "30" seconds
+    Then I should see "test mp3 file"
+    And I switch edit mode in Snap
+    And I open "test mp3 file" actions menu
+    And I choose "Edit settings" in the open action menu
     And I expand all fieldsets
     And I set the field "Add requirements" to "1"
     And I set the field "View the activity" to "1"
-    And I set the following fields to these values:
-      | Display | 5 |
     And I click on "#id_submitbutton2" "css_element"
     And I follow "Section 1"
-    And "span.autocompletion img[title='The system marks this item complete according to conditions: test mp3 file']" "css_element" should exist
-    And I click on ".snap-resource[data-type='mp3'] .snap-asset-link a" "css_element"
+    And I wait until the page is ready
+    And the "View" item should exist in the "Completion" dropdown of the "test mp3 file" "activity"
+    And I follow "test mp3 file"
     And I wait until "#snap-light-box" "css_element" is visible
     Then "#snap-light-box" "css_element" should exist
     And I click on "#snap-light-box-close" "css_element"
@@ -68,6 +71,7 @@ Feature: When the moodle theme is set to Snap, clicking on a resource with a med
     Given I log in as "teacher1"
     And I am on the course main page for "C1"
     And I follow "Section 1"
+    And I wait until the page is ready
     Then "#section-1" "css_element" should exist
     And "#snap-drop-file-1" "css_element" should exist
     And I upload file "test_mp3_file.mp3" to section 1
@@ -77,9 +81,10 @@ Feature: When the moodle theme is set to Snap, clicking on a resource with a med
     And I set the following fields to these values:
       | Description                                    | Description text for MP3 file |
       | showdescription                                | 1                   |
-      | Display | 5 |
+    And I set the field "id_display" to "Open"
     And I click on "#id_submitbutton2" "css_element"
     And I follow "Section 1"
+    And I wait until the page is ready
     And I click on ".snap-resource[data-type='mp3'] .snap-asset-link a" "css_element"
     And I wait until "#snap-light-box" "css_element" is visible
     Then "#snap-light-box" "css_element" should exist

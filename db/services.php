@@ -42,51 +42,6 @@ $functions = [
         'loginrequired'   => true,
         'readonlysession' => true, // We don't modify the session.
     ],
-    'theme_snap_course_completion'        => [
-        'classname'       => 'theme_snap\\webservice\\ws_course_completion',
-        'methodname'      => 'service',
-        'description'     => 'Course completion updater',
-        'type'            => 'write',
-        'ajax'            => true,
-        'loginrequired'   => true,
-        'readonlysession' => true, // We don't modify the session.
-    ],
-    'theme_snap_course_toc_chapters'      => [
-        'classname'       => 'theme_snap\\webservice\\ws_course_toc_chapters',
-        'methodname'      => 'service',
-        'description'     => 'Get course TOC chapters',
-        'type'            => 'read',
-        'ajax'            => true,
-        'loginrequired'   => true,
-        'readonlysession' => true, // We don't modify the session.
-    ],
-    'theme_snap_course_sections'          => [
-        'classname'       => 'theme_snap\\webservice\\ws_course_sections',
-        'methodname'      => 'service',
-        'description'     => 'Manage course sections',
-        'type'            => 'write',
-        'ajax'            => true,
-        'loginrequired'   => true,
-        'readonlysession' => true, // We don't modify the session.
-    ],
-    'theme_snap_course_module'            => [
-        'classname'       => 'theme_snap\\webservice\\ws_course_module',
-        'methodname'      => 'service',
-        'description'     => 'Specific course module HTML',
-        'type'            => 'read',
-        'ajax'            => true,
-        'loginrequired'   => true,
-        'readonlysession' => true, // We don't modify the session.
-    ],
-    'theme_snap_course_module_completion' => [
-        'classname'       => 'theme_snap\\webservice\\ws_course_module_completion',
-        'methodname'      => 'service',
-        'description'     => 'Course module completion',
-        'type'            => 'write',
-        'ajax'            => true,
-        'loginrequired'   => true,
-        'readonlysession' => true, // We don't modify the session.
-    ],
     'theme_snap_course_cards_categories'  => [
         'classname'       => 'theme_snap\\webservice\\ws_course_cards_categories',
         'methodname'      => 'service',
@@ -137,6 +92,24 @@ $functions = [
         'methodname'      => 'service',
         'description'     => 'Changes the default behavior of course actions in course tools section',
         'type'            => 'write',
+        'ajax'            => true,
+        'loginrequired'   => true,
+        'readonlysession' => true, // We don't modify the session.
+    ],
+    'theme_snap_update_course_toc_progressbar'              => [
+        'classname'       => 'theme_snap\\webservice\\ws_course_toc_progressbar',
+        'methodname'      => 'service',
+        'description'     => 'Update the course TOC progressbar when changing any activity completion status',
+        'type'            => 'read',
+        'ajax'            => true,
+        'loginrequired'   => true,
+        'readonlysession' => true, // We don't modify the session.
+    ],
+    'theme_snap_get_course_section_progress'                => [
+        'classname'       => 'theme_snap\\webservice\\ws_course_section_progress',
+        'methodname'      => 'service',
+        'description'     => 'Get the completion progress for a course section',
+        'type'            => 'read',
         'ajax'            => true,
         'loginrequired'   => true,
         'readonlysession' => true, // We don't modify the session.

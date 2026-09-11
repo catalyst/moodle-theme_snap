@@ -187,20 +187,32 @@ class behat_theme_snap extends behat_base {
     }
 
     /**
+     * Go to a specific course section by its section number and course shortname.
+     *
+     * Example:
+     *   Given I go to section 3 of course "C1"
+     *
      * @param int $section
-     * @Given /^I go to course section (\d+)$/
+     * @param string $shortname
+     * @Given /^I go to section (\d+) of course "([^"]+)"$/
      */
-    public function i_go_to_course_section($section) {
+    public function i_go_to_section_of_course($section, $shortname) {
+        global $DB;
+
+        $courseid = $DB->get_field('course', 'id', ['shortname' => $shortname], MUST_EXIST);
+        $sectionid = $DB->get_field('course_sections', 'id', [
+            'course' => $courseid,
+            'section' => $section
+        ], MUST_EXIST);
+
+        $url = new moodle_url('/course/section.php', ['id' => $sectionid]);
+
+        $this->getSession()->visit($url->out(false));
         $generalcontext = behat_context_helper::get('behat_general');
         $generalcontext->wait_until_the_page_is_ready();
-        $session = $this->getSession();
-        $currenturl = $session->getCurrentUrl();
-        if (stripos($currenturl, 'course/view.php') === false) {
-            throw new ExpectationException('Current page is not a course page!', $session);
-        }
-        $session->executeScript('location.hash = "'.'section-'.$section.'";');
-        $this->i_wait_until_is_visible('#section-'.$section, 'css_element');
+        $this->i_wait_until_is_visible('.course-content', 'css_element');
     }
+
 
     /**
      * @param string $shortname
@@ -210,13 +222,7 @@ class behat_theme_snap extends behat_base {
     public function i_can_see_course_in_all_sections_mode($shortname) {
         $this->i_am_on_course_page($shortname);
         $this->i_go_to_single_course_section(1);
-
-        // In the selector below, .section-navigation.navigationtitle relates to the element which contains the single
-        // section at a time navigation. Visually you would see a link on the left entitled "General" and a link on the
-        // right entitled "Topic 2"
-        // This test ensures you do not see those elements. If you swap to clean theme in a single section mode at a
-        // time course you will see that navigation after clicking on topic 1.
-        $this->execute('behat_general::should_not_exist', ['.section-navigation.navigationtitle', 'css_element']);
+        $this->execute('behat_general::should_exist', ['ul.topics', 'css_element']);
     }
 
     /**
@@ -227,9 +233,6 @@ class behat_theme_snap extends behat_base {
     public function i_create_a_new_section_in_course($shortname) {
 
         $this->i_am_on_course_page($shortname);
-
-        $this->execute('behat_general::i_change_window_size_to', ['window', '600x1000']);
-        $this->execute('behat_general::i_click_on', ['#toc-mobile-menu-toggle', 'css_element']);
         $this->execute('behat_general::click_link', ['Create a new section']);
         $this->execute('behat_forms::i_set_the_field_to', ['Title', 'New section title']);
         $this->execute('behat_general::i_click_on', ['Create section', 'button']);
@@ -262,9 +265,7 @@ class behat_theme_snap extends behat_base {
         $fs->create_file_from_pathname($fileinfo, $CFG->dirroot . "/theme/snap/tests/fixtures/testpng.png");
 
         $this->i_am_on_course_page($shortname);
-        $this->execute('behat_general::i_change_window_size_to', ['window', '600x1000']);
-        $this->execute('behat_general::i_click_on', ['#toc-mobile-menu-toggle', 'css_element']);
-        $this->execute('behat_general::i_click_on', ['.col-lg-3 .toc-footer #snap-new-section', 'css_element']);
+        $this->execute('behat_general::click_link', ['Create a new section']);
         $this->execute('behat_forms::i_set_the_field_to', ['Title', 'New section with content']);
         $javascript = "var value = document.getElementById('summary-editor_ifr').contentDocument.querySelectorAll('body');";
         $javascript .= "document.getElementById('summary-editor_ifr').contentDocument.body.innerHTML = '<p>New section contents</p>';";
@@ -335,7 +336,7 @@ class behat_theme_snap extends behat_base {
                         'assignfeedbackcomments_editor[format]' => FORMAT_HTML,
                     ];
                     if (!$commentsplugin->save_settings($formdata)) {
-                        throw new moodle_exception($commentsplugin->get_error());
+                        throw new \core\exception\moodle_exception($commentsplugin->get_error());
                         $USER = $origuser;
                         return false;
                     }
@@ -477,20 +478,29 @@ class behat_theme_snap extends behat_base {
     }
 
     /**
-     * Restrict a course section by date.
+     * Restrict a specific course section by date.
+     *
+     * Example:
+     *   And I restrict course section 1 by date to "tomorrow" in course "C1"
+     *
      * @param int $section
      * @param string $date
-     * @Given /^I restrict course section (?P<section_int>(?:\d+)) by date to "(?P<date_string>(?:[^"]|\\")*)"$/
+     * @param string $shortname
+     * @Given /^I restrict course section (\d+) by date to "([^"]+)" in course "([^"]+)"$/
      */
-    public function i_restrict_course_section_by_date($section, $date) {
+    public function i_restrict_course_section_by_date($section, $date, $shortname) {
         $datetime = strtotime($date);
         $helper = behat_context_helper::get('behat_general');
-        $this->i_go_to_course_section($section);
-        $this->execute('behat_general::i_click_on', ['#section-'.$section.' .edit-summary', 'css_element']);
+        $this->i_go_to_section_of_course($section, $shortname);
+        $this->execute('behat_general::i_click_on', ['#section-' . $section . ' .edit-summary', 'css_element']);
         $helper->wait_until_the_page_is_ready();
-        $this->execute('behat_forms::i_set_the_field_to', ['name', 'Topic '.$date.' '.$section]);
+        $this->execute('behat_forms::i_set_the_field_to', [
+            'name',
+            'Topic ' . $date . ' ' . $section
+        ]);
         $this->add_date_restriction($datetime, 'Save changes');
     }
+
 
     /**
      * Restrict a course asset by date.
@@ -581,9 +591,9 @@ class behat_theme_snap extends behat_base {
     public function i_restrict_asset_by_completion($asset1, $asset2) {
         /** @var behat_general $helper */
         $helper = behat_context_helper::get('behat_general');
-        $xpathassetmore = "//p[contains(@class, 'instancename')][contains(text(), '$asset1')]/ancestor::div[contains(@class, 'activityinstance')]//button[contains(@class, 'snap-edit-asset-more')]";
+        $xpathassetmore = "//li[contains(@class, 'activity')][.//span[contains(@class, 'instancename') and contains(text(), '$asset1')]]//a[contains(@class, 'dropdown-toggle') and contains(@id, 'action-menu-toggle')]";
         $helper->i_click_on($xpathassetmore, 'xpath_element');
-        $xpathedit = "//p[contains(@class, 'instancename')][contains(text(), '$asset1')]/ancestor::div[contains(@class, 'activityinstance')]//a[contains(@class, 'snap-edit-asset')]";
+        $xpathedit = "//li[contains(@class, 'activity')][.//span[contains(@class, 'instancename') and contains(text(), '$asset1')]]//a[contains(@data-action, 'update') and contains(@class, 'editing_update')]";
         $helper->i_click_on($xpathedit, 'xpath_element');
         $this->apply_completion_restriction($asset2, 'Save and return to course');
     }
@@ -597,114 +607,9 @@ class behat_theme_snap extends behat_base {
      * @codingStandardsIgnoreEnd
      */
     public function i_restrict_asset_by_belong_to_group($asset1, $group1) {
-        /** @var behat_general $helper */
-        $helper = behat_context_helper::get('behat_general');
-        $xpathassetmore = "//p[contains(@class, 'instancename')][contains(text(), '$asset1')]/ancestor::div[contains(@class, 'activityinstance')]//button[contains(@class, 'snap-edit-asset-more')]";
-        $helper->i_click_on($xpathassetmore, 'xpath_element');
-        $xpathedit = "//p[contains(@class, 'instancename')][contains(text(), '$asset1')]/ancestor::div[contains(@class, 'activityinstance')]//a[contains(@class, 'snap-edit-asset')]";
-        $helper->i_click_on($xpathedit, 'xpath_element');
+        $this->execute('behat_course::i_open_actions_menu', $asset1);
+        $this->execute('behat_action_menu::i_choose_in_the_open_action_menu', 'Edit settings');
         $this->apply_group_restriction($group1, 'Save and return to course');
-    }
-
-    /**
-     * @param string $str
-     * @param string $baseselector
-     * @throws ExpectationException
-     * @Given /^I should see availability info "(?P<str>(?:[^"]|\\")*)"$/
-     */
-    public function i_see_availabilityinfo($str, $baseselector = '') {
-        $str = trim($str);
-        $nodes = $this->find_all('xpath', $baseselector.'//div[contains(@class, \'snap-conditional-tag\')]');
-
-        // @codingStandardsIgnoreLine
-        /** @var NodeElement $node */
-        foreach ($nodes as $node) {
-            $nodetext = trim($node->getText());
-            if (stripos($nodetext, $str) !== false) {
-                return;
-            }
-        }
-
-        $session = $this->getSession();
-        throw new ExpectationException('Failed to find availability notice of "'.$str.'"', $session);
-    }
-
-    /**
-     * Get base selector for availabilityinfo dending on type and elementstr.
-     *
-     * @param string $type
-     * @param string $elementstr
-     * @return string
-     */
-    private function base_selector_availabilityinfo($type, $elementstr) {
-        if ($type === 'section') {
-            $baseselector = '//li[@id="section-'.$elementstr.'"]';
-        } else if ($type === 'asset') {
-            $baseselector = '(//li[contains(@class, \'snap-asset\')]'. // Selection when editing teacher.
-                '//h3[contains(@class, \'snap-asset-link\')]'.
-                '//span[contains(text(), \''.$elementstr.'\')]'.
-                '/parent::a/parent::h3/parent::div'.
-                '|'.
-                '//li[contains(@class, \'snap-asset\')]'. // Selection when anyone else.
-                '//h3[contains(@class, \'snap-asset-link\')]'.
-                '//*[contains(text(),  \''.$elementstr.'\')]'.
-                '/parent::h3/parent::div)';
-        } else {
-            throw new coding_exception('Unknown element type ('.$type.')');
-        }
-        return $baseselector;
-    }
-
-    /**
-     * @param string $str
-     * @param string $type
-     * @param string $elementstr
-     * @throws ExpectationException
-     * @codingStandardsIgnoreStart
-     * @Given /^I should see availability info "(?P<str>(?:[^"]|\\")*)" in "(?P<elementtype>section|asset)" "(?P<elementstr>(?:[^"]|\\")*)"$/
-     * @codingStandardsIgnoreEnd
-     */
-    public function i_see_availabilityinfo_in($str, $type, $elementstr) {
-        $this->i_see_availabilityinfo($str, $this->base_selector_availabilityinfo($type, $elementstr));
-    }
-
-    /**
-     * @param string $str
-     * @param string $baseselector
-     * @throws ExpectationException
-     * @Given /^I should not see availability info "(?P<str>(?:[^"]|\\")*)"$/
-     */
-    public function i_dont_see_availabilityinfo($str, $baseselector = '') {
-        try {
-            $nodes = $this->find_all('xpath', $baseselector.'//div[contains(@class, \'snap-conditional-tag\')]');
-        } catch (Exception $e) {
-            if (empty($nodes)) {
-                return;
-            }
-        }
-        // @codingStandardsIgnoreStart
-        /** @var NodeElement $node */
-        foreach ($nodes as $node) {
-            if ($node->getText() === $str) {
-                $session = $this->getSession();
-                $msg = 'Availability notice found in element '.$node->getXpath().' of "'.$str.'"';
-                throw new ExpectationException($msg, $session);
-            }
-        }
-        // @codingStandardsIgnoreEnd
-    }
-
-    /**
-     * @param string $str
-     * @param string $type
-     * @param string $elementstr
-     * @throws ExpectationException
-     * @codingStandardsIgnoreStart
-     * @Given /^I should not see availability info "(?P<str>(?:[^"]|\\")*)" in "(?P<elementtype>section|asset)" "(?P<elementstr>(?:[^"]|\\")*)"$/
-     * @codingStandardsIgnoreEnd
-     */
-    public function i_dont_see_availabilityinfo_in($str, $type, $elementstr) {
-        $this->i_dont_see_availabilityinfo($str, $this->base_selector_availabilityinfo($type, $elementstr));
     }
 
     /**
@@ -800,7 +705,7 @@ class behat_theme_snap extends behat_base {
      * @Given /^I should see available from date of "(?P<date_string>(?:[^"]|\\")*)" in section (?P<section_int>(?:\d+))$/
      */
     public function i_should_see_available_from_in_section($date, $section) {
-        $elementselector = '#section-'.$section.' > div.content > .snap-conditional-tag';
+        $elementselector = 'div.content .section_availability';
         return $this->i_should_see_available_from_in_element($date, $elementselector, 'css_element');
     }
 
@@ -811,7 +716,7 @@ class behat_theme_snap extends behat_base {
      * @Given /^I should not see available from date of "(?P<date_string>(?:[^"]|\\")*)" in section (?P<section_int>(?:\d+))$/
      */
     public function i_should_not_see_available_from_in_section($date, $section) {
-        $elementselector = '#section-'.$section.' > div.content > .snap-conditional-tag';
+        $elementselector = '#section-'.$section.' > div.content .section_availability';
         return $this->i_should_not_see_available_from_in_element($date, $elementselector, 'css_element');
     }
 
@@ -822,8 +727,8 @@ class behat_theme_snap extends behat_base {
      */
     public function i_should_see_in_toc_item($text, $tocitem) {
         $tocitem++; // Ignore introduction item.
-        $element = '#chapters h3:nth-of-type('.$tocitem.')';
-        $this->execute('behat_general::assert_element_contains_text', [$text, $element, 'css_element']);
+        $element = '#course-index div.courseindex-section:nth-of-type('.$tocitem.')';
+        $this->execute('behat_general::should_be_visible', [$element . '.courseindex-section > .courseindex-item.courseindex-section-title > .courseindex-locked', 'css_element']);
     }
 
     /**
@@ -833,8 +738,8 @@ class behat_theme_snap extends behat_base {
      */
     public function i_should_not_see_in_toc_item($text, $tocitem) {
         $tocitem++; // Ignore introduction item.
-        $element = '#chapters h3:nth-of-type('.$tocitem.')';
-        $this->execute('behat_general::assert_element_not_contains_text', [$text, $element, 'css_element']);
+        $element = '#course-index div.courseindex-section:nth-of-type('.$tocitem.')';
+        $this->execute('behat_general::should_not_be_visible', [$element . '.courseindex-section > .courseindex-item.courseindex-section-title > .courseindex-locked', 'css_element']);
     }
 
     /**
@@ -1036,7 +941,7 @@ class behat_theme_snap extends behat_base {
         $nth = intval($nth);
         /** @var behat_general $helper */
         $helper = behat_context_helper::get('behat_general');
-        $helper->i_click_on('#chapters h3:nth-of-type(' . $nth . ')', 'css_element');
+        $helper->i_click_on('#course-index div.courseindex-section:nth-of-type(' . $nth . ')', 'css_element');
     }
 
     /**
@@ -1052,11 +957,10 @@ class behat_theme_snap extends behat_base {
      * @param string $type "next" / "previous"
      * @param int $section
      * @param string $linktitle
-     * @param string $linkhref
      */
-    protected function check_navigation_for_section($type, $section, $linktitle, $linkhref) {
+    protected function check_navigation_for_section($type, $section, $linktitle) {
         $baseselector = '#section-' . $section . ' nav.section_footer a.'.$type.'_section';
-        $titleselector = $baseselector.' span';
+        $titleselector = $baseselector.' .nav_text';
         $node = $this->find('css', $titleselector);
         $title = $node->getHtml();
         // Title case version of type.
@@ -1066,46 +970,44 @@ class behat_theme_snap extends behat_base {
         } else {
             $sectionnumber = $section - 1;
         }
-        $expectedtitle = '<span class="nav_guide" section-number="' . $sectionnumber . '">' . $ttype
-            . ' section</span><br>'.htmlentities($linktitle, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401);
-        if (strtolower($title) !== strtolower($expectedtitle)) {
-            $msg = $ttype.' title does not match expected "' . $expectedtitle . '"' . ' V "' . $title .
+
+        $expectedtitle = '<span class="nav_guide">' . $ttype
+            . ' section</span><span class="nav_title" aria-label="' . htmlentities($linktitle, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401) . '"'.
+            ' title="' . htmlentities($linktitle, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401) . '">'
+            . htmlentities($linktitle, ENT_QUOTES | ENT_SUBSTITUTE | ENT_HTML401) . '</span>';
+
+        $decodedTitle = html_entity_decode($title, ENT_QUOTES | ENT_HTML401);
+        $decodedExpected = html_entity_decode($expectedtitle, ENT_QUOTES | ENT_HTML401);
+        $cleanTitle = strtolower(trim(preg_replace('/\s+/', '', $decodedTitle)));
+        $cleanExpected = strtolower(trim(preg_replace('/\s+/', '', $decodedExpected)));
+
+        if ($cleanTitle !== $cleanExpected) {
+            $msg = $ttype.' title does not match expected "' . $cleanExpected . '"' . ' V "' . $cleanTitle .
                     '" - selector = "'.$titleselector.'"';
             throw new ExpectationException($msg, $this->getSession());
         }
-        $node = $this->find('css', $baseselector);
-        $href = $node->getAttribute('href');
-        // Full course link, find the #href only.
-        $data = explode('#', $href);
-        if (count($data) != 2 || '#' . $data[1] != $linkhref) {
-            $msg = $ttype.' navigation href does not match expected "' . $linkhref . '"' . ' V "' . $href .
-                        '" - selector = "'.$baseselector.'"';
-            throw new ExpectationException($msg, $this->getSession());
-        }
     }
 
     /**
      * @codingStandardsIgnoreStart
-     * @Given /^the previous navigation for section "(?P<section_int>(?:[^"]|\\")*)" is for "(?P<title_str>(?:[^"]|\\")*)" linking to "(?P<link_str>(?:[^"]|\\")*)"$/
+     * @Given /^the previous navigation for section "(?P<section_int>(?:[^"]|\\")*)" is for "(?P<title_str>(?:[^"]|\\")*)"$/
      * @codingStandardsIgnoreEnd
      * @param int $section
      * @param string $linktitle
-     * @param string $linkhref
      */
-    public function the_previous_navigation_for_section_is($section, $linktitle, $linkhref) {
-        $this->check_navigation_for_section('previous', $section, $linktitle, $linkhref);
+    public function the_previous_navigation_for_section_is($section, $linktitle) {
+        $this->check_navigation_for_section('previous', $section, $linktitle);
     }
 
     /**
      * @codingStandardsIgnoreStart
-     * @Given /^the next navigation for section "(?P<section_int>(?:[^"]|\\")*)" is for "(?P<title_str>(?:[^"]|\\")*)" linking to "(?P<link_str>(?:[^"]|\\")*)"$/
+     * @Given /^the next navigation for section "(?P<section_int>(?:[^"]|\\")*)" is for "(?P<title_str>(?:[^"]|\\")*)"$/
      * @codingStandardsIgnoreEnd
      * @param int $section
      * @param string $linktitle
-     * @param string $linkhref
      */
-    public function the_next_navigation_for_section_is($section, $linktitle, $linkhref) {
-        $this->check_navigation_for_section('next', $section, $linktitle, $linkhref);
+    public function the_next_navigation_for_section_is($section, $linktitle) {
+        $this->check_navigation_for_section('next', $section, $linktitle);
     }
 
     /**
@@ -1247,13 +1149,13 @@ class behat_theme_snap extends behat_base {
      *
      * @param string $username
      * @return stdClass | false
-     * @throws coding_exception
+     * @throws \core\exception\coding_exception
      */
     private function get_user_by_username($username) {
         global $DB;
         $user = $DB->get_record('user', ['username' => $username]);
         if (empty($user)) {
-            throw new coding_exception('Invalid username '.$username);
+            throw new \core\exception\coding_exception('Invalid username '.$username);
         }
         return $user;
     }
@@ -1275,8 +1177,8 @@ class behat_theme_snap extends behat_base {
      * @param int $userid
      * @param int $roleid
      * @return bool
-     * @throws coding_exception
-     * @throws moodle_exception
+     * @throws \core\exception\coding_exception
+     * @throws \core\exception\moodle_exception
      */
     protected function unassign_role_from_user($contextid, $userid, $roleid) {
         global $DB;
@@ -1319,8 +1221,8 @@ class behat_theme_snap extends behat_base {
      * @Given /^I should see asset delete dialog$/
      */
     public function i_should_see_asset_delete_dialog() {
-        $element = 'div.modal[data-region="modal-container"] .modal-dialog .modal-content';
-        $text = 'Are you sure that you want to delete';
+        $element = '.modal-dialog .modal-content .modal-header';
+        $text = 'Delete activity?';
         $this->execute('behat_general::assert_element_contains_text', [$text, $element, 'css_element']);
     }
 
@@ -1328,7 +1230,7 @@ class behat_theme_snap extends behat_base {
      * @Given /^I should not see asset delete dialog$/
      */
     public function i_should_not_see_asset_delete_dialog() {
-        $element = 'div.modal[data-region="modal-container"] .modal-dialog .modal-content';
+        $element = '.modal-dialog .modal-content';
         try {
             $nodes = $this->find_all('css', $element);
         } catch (Exception $e) {
@@ -1344,8 +1246,8 @@ class behat_theme_snap extends behat_base {
      * @Given /^I should see section delete dialog$/
      */
     public function i_should_see_section_delete_dialog() {
-        $element = 'div.modal[data-region="modal-container"] .modal-dialog .modal-content';
-        $text = 'Are you absolutely sure you want to completely delete';
+        $element = 'div.modal-dialog';
+        $text = 'Delete section?';
         $this->execute('behat_general::assert_element_contains_text', [$text, $element, 'css_element']);
     }
 
@@ -1424,8 +1326,8 @@ class behat_theme_snap extends behat_base {
      * @Given /^I mark the activity "(?P<activityname_string>(?:[^"]|\\")*)" as complete$/
      */
     public function i_mark_as_complete($activityname) {
-        $imgalt = 'Not completed: '.$activityname.'. Select to mark as complete.';
-        $this->execute('behat_general::i_click_on', ['img.icon[alt="'.$imgalt.'"]', 'css_element']);
+        $activitynode = $this->get_activity_node($activityname);
+        $activitynode->find('css', 'button[data-action="toggle-manual-completion"]')->click();
     }
 
     /**
@@ -1435,8 +1337,8 @@ class behat_theme_snap extends behat_base {
      * @Given /^I mark the activity "(?P<activityname_string>(?:[^"]|\\")*)" as incomplete$/
      */
     public function i_mark_as_incomplete($activityname) {
-        $imgalt = 'Completed: '.$activityname.'. Select to mark as not complete.';
-        $this->execute('behat_general::i_click_on', ['img.icon[alt="'.$imgalt.'"]', 'css_element']);
+        $activitynode = $this->get_activity_node($activityname);
+        $activitynode->find('css', 'button[data-action="toggle-manual-completion"]')->click();
     }
 
     /**
@@ -1531,13 +1433,20 @@ class behat_theme_snap extends behat_base {
     }
 
     /**
-     * @Given /^I highlight section (?P<section_int>(?:\d+))$/
+     * Highlight a specific course section.
+     *
+     * Example:
+     *   Given I highlight section 1
+     *
+     * @Given /^I highlight section (?P<section_int>\d+)$/
      * @param int $section
      */
     public function i_highlight_section($section) {
-        $this->execute('behat_general::i_click_on', ['#section-'.$section.' .extra-actions-menu', 'css_element']);
-        $this->execute('behat_general::i_click_on', ['#section-'.$section.' .extra-actions-menu .snap-highlight', 'css_element']);
+        $this->i_wait_until_is_visible('#extra-actions-dropdown-' . $section, 'css_element');
+        $this->execute('behat_general::i_click_on', ['#extra-actions-dropdown-' . $section, 'css_element']);
+        $this->execute('behat_general::i_click_on', ['#section-' . $section . ' .snap-highlight', 'css_element']);
     }
+
 
     /**
      * @codingStandardsIgnoreStart
@@ -1737,7 +1646,7 @@ class behat_theme_snap extends behat_base {
      * Opens the course homepage.
      *
      * @Given /^I am on activity "(?P<activity>(?:[^"]|\\")*)" "(?P<activityname>(?:[^"]|\\")*)" page$/
-     * @throws coding_exception
+     * @throws \core\exception\coding_exception
      * @param string $coursefullname The full name of the course.
      * @return void
      */
@@ -1745,7 +1654,7 @@ class behat_theme_snap extends behat_base {
         global $DB;
         $activityid = $DB->get_field($activity, 'id', ['name' => $activityname], MUST_EXIST);
         $cm = get_coursemodule_from_instance($activity, $activityid, 0, false, MUST_EXIST);
-        $url = new moodle_url('/mod/' . $activity . '/view.php', ['id' => $cm->id]);
+        $url = new \core\url('/mod/' . $activity . '/view.php', ['id' => $cm->id]);
         $this->getSession()->visit($this->locate_path($url->out_as_local_url(false)));
     }
 
@@ -1808,6 +1717,27 @@ class behat_theme_snap extends behat_base {
     }
 
     /**
+     * Scroll page to the top.
+     *
+     * @When I scroll to the top
+     *
+     */
+    public function i_scroll_to_top() {
+        $function = <<<JS
+          (function(){
+              window.scrollTo(0,0);
+              return 1;
+          })()
+JS;
+        try {
+            $this->getSession()->wait(5000, $function);
+        }
+        catch(Exception $e) {
+            throw new \Exception("scrollToTop failed");
+        }
+    }
+
+    /**
      * Scroll page to the bottom.
      *
      * @When I scroll to the bottom
@@ -1846,6 +1776,46 @@ JS;
         } catch (Exception $e) {
             throw new \Exception("scrollIntoView failed");
         }
+    }
+
+    /**
+     * Scroll element by selector into view and align bottom of element with the bottom of the visible area.
+     *
+     * @When I scroll to the base of selector :selector
+     *
+     */
+    public function i_scroll_into_view_base_by_selector($selector) {
+        $function = <<<JS
+          (function(){
+              var elem = document.querySelector("$selector");
+              elem.scrollIntoView(false);
+              return 1;
+          })()
+JS;
+        try {
+            $this->getSession()->wait(5000, $function);
+        } catch (Exception $e) {
+            throw new \Exception("scrollIntoView by selector failed");
+        }
+    }
+
+    /**
+     * Navigate to an activity view page without waiting for pending JS.
+     *
+     * Activities like LTI configured to open in a new window execute window.open() on page load,
+     * which can leave pending JS (e.g. modal promises) that never resolve, causing Behat to
+     * time out on wait_for_pending_js(). This step uses session visit directly to bypass that wait.
+     *
+     * @When /^I visit the "(?P<activityname>[^"]*)" "(?P<modname>[^"]*)" activity page without waiting$/
+     * @param string $activityname The name of the activity.
+     * @param string $modname The module name (e.g. "lti").
+     */
+    public function i_visit_activity_page_without_waiting($activityname, $modname) {
+        global $DB;
+        $activity = $DB->get_record($modname, ['name' => $activityname], '*', MUST_EXIST);
+        $cm = get_coursemodule_from_instance($modname, $activity->id, $activity->course, false, MUST_EXIST);
+        $url = new \moodle_url("/mod/$modname/view.php", ['id' => $cm->id]);
+        $this->getSession()->visit($this->locate_path($url->out_as_local_url(false)));
     }
 
     /**
@@ -1986,5 +1956,78 @@ JS;
             $element->click();
             $this->getSession()->wait(300);
         }
+    }
+
+    /**
+     * Check that an element click is intercepted.
+     *
+     * @Then /^the click to the element "([^"]*)" was intercepted$/
+     * @param string $selector CSS selector to find the element.
+     */
+    public function click_to_element_was_intercepted($selector) {
+        $session = $this->getSession();
+        $page = $session->getPage();
+        $element = $page->find('css', $selector);
+
+        if (!$element) {
+            throw new ExpectationException("Element not found '$selector'", $session);
+        }
+        try {
+            $element->click();
+            throw new ExpectationException("The element '$selector' was clickable, but it was expected not to be.", $session);
+        } catch (\Exception $e) {
+            $message = $e->getMessage();
+            if (strpos($message, 'element click intercepted') !== false) {
+                return;
+            }
+            throw new ExpectationException($message, $session);
+        }
+    }
+
+    /**
+     * Clicks on the block drawer toggle button.
+     * 
+     * @Given /^I click on the block drawer toggle$/
+     */
+    public function i_click_on_block_drawer_toggle() {
+        $this->execute('behat_general::i_click_on', ["button[title='Toggle block drawer']", 'css_element']);
+    }
+
+     /**
+     * Returns the DOM node of the activity from <li>.
+     *
+     * @throws ElementNotFoundException Thrown by behat_base::find
+     * @param string $activityname The activity name
+     * @return NodeElement
+     */
+    protected function get_activity_node($activityname) {
+
+        $activityname = behat_context_helper::escape($activityname);
+        $xpath = "//li[contains(concat(' ', normalize-space(@class), ' '), ' activity ')][contains(., $activityname)]";
+
+        return $this->find('xpath', $xpath);
+    }
+
+    /**
+     * @When /^I hover over the element "([^"]*)"$/
+     * @param string $locator element
+     */
+    public function iHoverOverTheElement($locator)
+    {
+            $session = $this->getSession();
+            $element = $session->getPage()->find('css', $locator);
+
+            if (null === $element) {
+                throw new \InvalidArgumentException(sprintf('Could not evaluate CSS selector: "%s"', $locator));
+            }
+
+            $session->executeScript("
+                var elem = document.querySelector('$locator');
+                if (elem) {
+                    elem.dispatchEvent(new MouseEvent('mouseover', { bubbles: true }));
+                    elem.dispatchEvent(new MouseEvent('mouseenter', { bubbles: true }));
+                    elem.dispatchEvent(new MouseEvent('mousemove', { bubbles: true }));
+                }
+            ");
     }
 }

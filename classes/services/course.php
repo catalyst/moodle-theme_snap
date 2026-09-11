@@ -20,8 +20,6 @@ defined('MOODLE_INTERNAL') || die();
 
 use theme_snap\renderables\course_card;
 use theme_snap\local;
-use theme_snap\renderables\course_toc;
-use theme_snap\color_contrast;
 
 require_once($CFG->dirroot.'/course/lib.php');
 
@@ -164,13 +162,13 @@ class course {
             return ['success' => false, 'warning' => get_string('unsupportedcoverimagetype', 'theme_snap', $ext)];
         }
 
-        $newfilename = 'rawcoverimage.'.$ext;
+        $newfilename = time().'rawcoverimage.'.$ext;
 
         $usercontext = \context_user::instance($USER->id);
 
         $filefromdraft = $fs->get_file($usercontext->id, 'user', 'draft', $fileid, '/', $filename);
         if ($filefromdraft->get_filesize() > get_max_upload_file_size($CFG->maxbytes)) {
-            throw new \moodle_exception('error:coverimageexceedsmaxbytes', 'theme_snap');
+            throw new \core\exception\moodle_exception('error:coverimageexceedsmaxbytes', 'theme_snap');
         }
 
         if ($context->contextlevel === CONTEXT_COURSE) {
@@ -206,7 +204,7 @@ class course {
             // Purge course image cache in case image has been updated.
             \cache::make('core', 'course_image')->delete($context->instanceid);
         } else {
-            throw new coding_exception('Unsupported context level '.$context->contextlevel);
+            throw new \core\exception\coding_exception('Unsupported context level '.$context->contextlevel);
         }
 
         // Create new cover image file and process it.
@@ -281,7 +279,7 @@ class course {
      * Get courses for current user split by favorite status.
      *
      * @return array
-     * @throws \coding_exception
+     * @throws \core\exception\coding_exception
      */
     public function my_courses_split_by_favorites() {
         $courses = enrol_get_my_courses('enddate', 'fullname ASC, id DESC');
@@ -354,255 +352,5 @@ class course {
     public function cardbyshortname($shortname) {
         $course = $this->coursebyshortname($shortname);
         return new course_card($course);
-    }
-
-    /**
-     * Get coursecompletion data by course shortname.
-     * @param string $shortname
-     * @param array $previouslyunavailablesections
-     * @param array $previouslyunavailablemods
-     * @return array
-     */
-    public function course_completion($shortname, $previouslyunavailablesections, $previouslyunavailablemods) {
-        global $PAGE, $OUTPUT;
-
-        $course = $this->coursebyshortname($shortname);
-        if (!isset($PAGE->context) && AJAX_SCRIPT) {
-            $PAGE->set_context(\context_course::instance($course->id));
-        }
-
-        [$unavailablesections, $unavailablemods] = local::conditionally_unavailable_elements($course);
-
-        $newlyavailablesections = array_diff($previouslyunavailablesections, $unavailablesections);
-        $intersectunavailable = array_intersect($previouslyunavailablesections, $unavailablesections);
-        $newlyunavailablesections = array_diff($unavailablesections, $intersectunavailable);
-
-        $newlyavailablemods = array_diff($previouslyunavailablemods, $unavailablemods);
-        $intersectunavailable = array_intersect($previouslyunavailablemods, $unavailablemods);
-        $newlyunavailablemods = array_diff($unavailablemods, $intersectunavailable);
-
-        /** @var \theme_snap_core_course_renderer $courserenderer */
-        $courserenderer = $PAGE->get_renderer('core', 'course', RENDERER_TARGET_GENERAL);
-        $modinfo = get_fast_modinfo($course);
-
-        $changedsectionhtml = [];
-        $changedsections = array_merge($newlyavailablesections, $newlyunavailablesections);
-        $format = course_get_format($course);
-        $course = $format->get_course();
-        if (!empty($changedsections)) {
-            $formatrenderer = $format->get_renderer($PAGE);
-            foreach ($changedsections as $sectionnumber) {
-                $section = $modinfo->get_section_info($sectionnumber);
-                $html = $formatrenderer->course_section($course, $section, $modinfo);
-                $changedsectionhtml[$sectionnumber] = (object) [
-                    'number' => $sectionnumber,
-                    'html'   => $html,
-                ];
-            }
-        }
-
-        $changedmodhtml = [];
-        $changedmods = array_merge($newlyavailablemods, $newlyunavailablemods);
-        if (!empty($changedmods)) {
-            $modinfo = get_fast_modinfo($course);
-            foreach ($changedmods as $modid) {
-                $completioninfo = new \completion_info($course);
-                $cm = $modinfo->get_cm($modid);
-                if (isset($changedsectionhtml[$cm->sectionnum])) {
-                    // This module's html has already been included in a changed section html.
-                    continue;
-                }
-                $html = $courserenderer->course_section_cm_list_item_snap($course, $completioninfo, $cm, $cm->sectionnum);
-                $changedmodhtml[$modid] = (object) [
-                    'id'   => $modid,
-                    'html' => $html,
-                ];
-            }
-        }
-
-        $unavailablesections = implode(',', $unavailablesections);
-        $unavailablemods = implode(',', $unavailablemods);
-
-        $toc = new course_toc($course, $format);
-
-        // If the course format is different from topics or weeks then the $toc would have some empty values.
-        $validformats = ['weeks', 'topics'];
-        if (!in_array($course->format, $validformats)) {
-            $toc->chapters = array('chapters' => []);
-            $toc->footer = array('footer' => []);
-        }
-
-        return [
-            'unavailablesections' => $unavailablesections,
-            'unavailablemods' => $unavailablemods,
-            'changedmodhtml' => $changedmodhtml,
-            'changedsectionhtml' => $changedsectionhtml,
-            'toc' => $toc->export_for_template($OUTPUT),
-        ];
-    }
-
-    /**
-     * @param string $shortname
-     * @return object
-     */
-    public function course_toc($shortname) {
-        global $OUTPUT;
-        $course = $this->coursebyshortname($shortname);
-        $toc = new course_toc($course);
-        return $toc->export_for_template($OUTPUT);
-    }
-
-    /**
-     * @param string $shortname
-     * @return object
-     */
-    public function course_toc_chapters($shortname) {
-        $course = $this->coursebyshortname($shortname);
-        $toc = new course_toc($course);
-        return $toc->convert_object_for_export($toc->chapters);
-    }
-
-    /**
-     * @param string $shortname
-     * @param int $sectionnumber
-     * @param boolean $highlight
-     * @throws \required_capability_exception
-     * @return array
-     */
-    public function highlight_section($shortname, $sectionnumber, $highlight) {
-        global $OUTPUT;
-        $course = $this->coursebyshortname($shortname);
-        $context = \context_course::instance($course->id);
-        require_capability('moodle/course:setcurrentsection', $context);
-
-        $setsectionnumber = empty($highlight) ? 0 : $sectionnumber;
-
-        course_set_marker($course->id, $setsectionnumber);
-        $course->marker = $setsectionnumber;
-        $modinfo = get_fast_modinfo($course);
-
-        if ($highlight) {
-            $section = $modinfo->get_section_info(0);
-        } else {
-            $section = $modinfo->get_section_info($sectionnumber);
-        }
-
-        $actionmodel = new \theme_snap\renderables\course_action_section_highlight($course, $section);
-        $toc = new \theme_snap\renderables\course_toc($course);
-        return [
-            'actionmodel' => $actionmodel->export_for_template($OUTPUT),
-            'toc' => $toc->export_for_template($OUTPUT),
-        ];
-    }
-
-    /**
-     * Set the visibility of a section.
-     * @param string $shortname
-     * @param int $sectionnumber
-     * @param boolean $visible
-     * @param bool $loadmodules Should modules be loaded.
-     * @return array
-     * @throws \moodle_exception
-     * @throws \required_capability_exception
-     */
-    public function set_section_visibility($shortname, $sectionnumber, $visible, $loadmodules = true) {
-        global $OUTPUT;
-        $course = $this->coursebyshortname($shortname);
-        $context = \context_course::instance($course->id);
-        require_capability('moodle/course:sectionvisibility', $context);
-        // Note, we do not use the return value of set_section_visible (resourcestotoggle) as nested resource visibility
-        // is handled via CSS.
-        set_section_visible($course->id, $sectionnumber, $visible);
-        $modinfo = get_fast_modinfo($course);
-        $section = $modinfo->get_section_info($sectionnumber);
-        $actionmodel = new \theme_snap\renderables\course_action_section_visibility($course, $section);
-
-        $nullformat = null;
-        $toc = new \theme_snap\renderables\course_toc($course, $nullformat, $loadmodules);
-
-        return [
-            'actionmodel' => $actionmodel->export_for_template($OUTPUT),
-            'toc' => $toc->export_for_template($OUTPUT),
-        ];
-    }
-
-    /**
-     * Delete a section.
-     * @param string $shortname
-     * @param int $sectionnumber
-     */
-    public function delete_section($shortname, $sectionnumber) {
-        global $OUTPUT;
-        $course = $this->coursebyshortname($shortname);
-        $context = \context_course::instance($course->id);
-        require_capability('moodle/course:sectionvisibility', $context);
-        // Note, we do not use the return value of set_section_visible (resourcestotoggle) as nested resource visibility
-        // is handled via CSS.
-        $modinfo = get_fast_modinfo($course);
-        $sectioninfo = $modinfo->get_section_info($sectionnumber);
-
-        if (course_can_delete_section($course, $sectioninfo)) {
-            course_delete_section($course, $sectioninfo, true, true);
-        }
-        $toc = new \theme_snap\renderables\course_toc($course);
-        return [
-            'toc' => $toc->export_for_template($OUTPUT),
-        ];
-    }
-
-    /**
-     * Get course TOC.
-     * @param string $shortname Course short name
-     * @return array
-     * @throws \coding_exception
-     */
-    public function toc($shortname) {
-        global $OUTPUT;
-        $course = $this->coursebyshortname($shortname);
-
-        $nullformat = null;
-        $loadmodules = true;
-        $toc = new \theme_snap\renderables\course_toc($course, $nullformat, $loadmodules);
-
-        return [
-            'toc' => $toc->export_for_template($OUTPUT),
-        ];
-    }
-
-
-    /**
-     * Toggle module completion state.
-     * @param int $id (cmid)
-     * @param int $completionstate
-     * @throws \coding_exception
-     * @throws \moodle_exception
-     * @throws moodle_exception
-     * @return string
-     */
-    public function module_toggle_completion($id, $completionstate) {
-        global $DB, $PAGE;
-
-        // Get course-modules entry.
-        [$course, $cminfo] = get_course_and_cm_from_cmid($id);
-
-        // Get renderer for completion HTML.
-        $context = \context_module::instance($id);
-        $PAGE->set_context($context);
-        $renderer = $PAGE->get_renderer('core', 'course', RENDERER_TARGET_GENERAL);
-
-        // Set up completion object and check it is enabled.
-        $completion = new \completion_info($course);
-        if (!$completion->is_enabled()) {
-            throw new \moodle_exception('completionnotenabled', 'completion');
-        }
-
-        // Check completion state is manual.
-        if ($cminfo->completion != COMPLETION_TRACKING_MANUAL) {
-            throw new \moodle_exception('cannotmanualctrack', $cminfo->modname);
-        }
-
-        $completion->update_state($cminfo, $completionstate);
-
-        return $renderer->snap_course_section_cm_completion($course, $completion, $cminfo);
     }
 }

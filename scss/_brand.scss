@@ -40,9 +40,7 @@
 .news-article-message *[style],
 .snap-image-summary *[style],
 .summary-text *[style]:not(.MathJax *[style]),
-.summary div[style]:not(.media-responsive-pad):not(.oembed-responsive-pad),
 .sitetopic p[style],
-.sitetopic div[style]:not(.media-responsive-pad):not(.oembed-responsive-pad),
 .signuppanel *[style],
 .signuppanel .text_to_html *[style],
 .snap-lightbox-description *[style] {
@@ -286,8 +284,7 @@ input[type="reset"],
 #page-login-index #page,
 .news-article-image,
 .news-article-preview,
-#snap-footer-alert,
-#toc-mobile-menu-toggle {
+#snap-footer-alert {
     background-color: $brand-primary;
 
 }

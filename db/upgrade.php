@@ -182,5 +182,32 @@ function xmldb_theme_snap_upgrade($oldversion) {
         upgrade_plugin_savepoint(true, 2025042100, 'theme', 'snap');
     }
 
+    if ($oldversion < 2025111000) {
+        // Remove snap settings related to Refactor of deprecated code.
+        unset_config('leftnav', 'theme_snap');
+        unset_config('displaydescription', 'theme_snap');
+        unset_config('coursepartialrender', 'theme_snap');
+        upgrade_plugin_savepoint(true, 2025111000, 'theme', 'snap');
+    }
+
+    if ($oldversion < 2025121900) {
+        // Define table theme_snap_toc_hidden to be created.
+        $table = new xmldb_table('theme_snap_toc_hidden');
+
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('cmid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, array('id'));
+
+        $table->add_index('cmid', XMLDB_INDEX_UNIQUE, array('cmid'));
+
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        upgrade_plugin_savepoint(true, 2025121900, 'theme', 'snap');
+    }
+
     return true;
 }

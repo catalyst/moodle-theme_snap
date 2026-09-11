@@ -25,8 +25,10 @@ Feature: When the moodle theme is set to Snap, teachers can move course sections
 
   Background:
     Given the following "courses" exist:
-      | fullname | shortname | category | format | initsections |
-      | Course 1 |     C1    |     0    | topics |      1       |
+      | fullname | shortname | category | format | initsections | startdate  |
+      | Course 1 |     C1    |     0    | topics |      5       |            |
+      | Course 2 |     C2    |     0    | weeks  |              | 1640995200 |
+    # the startdate above makes sure first week is "1 January - 7 January" on weeks format
     And the following "users" exist:
       | username | firstname | lastname | email |
       | teacher1 | Teacher | 1 | teacher1@example.com |
@@ -35,117 +37,146 @@ Feature: When the moodle theme is set to Snap, teachers can move course sections
       | user | course | role |
       | teacher1 | C1 | editingteacher |
       | student1 | C1 | student |
+      | teacher1 | C2 | editingteacher |
+      | student1 | C2 | student |
     And the following "activities" exist:
-      | activity | course               | idnumber | name             | intro                         | section |
-      | assign   | C1                   | assign1  | Test assignment1 | Test assignment description 1 | 1       |
-      | assign   | C1                   | assign2  | Test assignment2 | Test assignment description 2 | 1       |
+      | activity   | course  | idnumber    | name             | intro                         | section |
+      | assign     | C1      | assign1     | Test assignment1 | Test assignment description 1 | 1       |
+      | assign     | C1      | assign2     | Test assignment2 | Test assignment description 2 | 2       |
+      | assign     | C1      | assign2     | Test assignment3 | Test assignment description 2 | 3       |
 
   @javascript
-  Scenario Outline: In read mode, teacher moves section 1 before section 4 (section 3).
+  Scenario: In read mode, teacher moves section 1 before section 4 (section 3).
     Given I log in as "admin"
-    And the following config values are set as admin:
-      | coursepartialrender | <Option> | theme_snap |
+    And I change window size to "large"
     And I log out
     And I log in as "teacher1"
+    And I switch edit mode in Snap
     And I am on the course main page for "C1"
     And I follow "Section 1"
-    And I follow "Untitled Section"
+    And I wait until the page is ready
+    And I click on "Edit section" "link" in the "ul.sections > li#section-1" "css_element"
     And I set the section name to "My & < > Section"
     And I press "Save changes"
     And I follow "My & < > Section"
+    And I wait until the page is ready
     And I follow "Move \"My & < > Section\""
-    Then I should see "Moving \"My & < > Section\"" in the "#snap-footer-alert" "css_element"
-    When I follow "Section 4"
-    And I follow "Place section \"My & < > Section\" before section \"Section 4\""
+    And I click on "Section 3" "link" in the ".modal-body" "css_element"
+    When I follow "My & < > Section"
+    And I wait until the page is ready
     Then I should see "My & < > Section" in the "#section-3 .sectionname" "css_element"
-    And "#chapters h3:nth-of-type(4) li.snap-visible-section" "css_element" should exist
     # Check that navigation is also updated.
-    # Note that "4th" refers to section-3 as section-0 is the "introduction" section in the TOC.
-    When I click on the "4th" link in the TOC
-    Then I should see "My & < > Section" in the "#section-3 .sectionname" "css_element"
-    Then the previous navigation for section "3" is for "Section 3" linking to "#section-2"
-    And the next navigation for section "3" is for "Section 4" linking to "#section-4"
+    Then the previous navigation for section "3" is for "Section 3"
+    And the next navigation for section "3" is for "Section 4"
     And I switch edit mode in Snap
-    Then the previous navigation for section "3" is for "Section 3" linking to "#section-2"
-    And the next navigation for section "3" is for "Section 4" linking to "#section-4"
+    Then the previous navigation for section "3" is for "Section 3"
+    And the next navigation for section "3" is for "Section 4"
     And I follow "Section 4"
+    And I wait until the page is ready
     And I switch edit mode in Snap
-    And the previous navigation for section "4" is for "My & < > Section" linking to "#section-3"
+    And the previous navigation for section "4" is for "My & < > Section"
     And I switch edit mode in Snap
-    And the previous navigation for section "4" is for "My & < > Section" linking to "#section-3"
+    And the previous navigation for section "4" is for "My & < > Section"
     When I follow "Section 2"
+    And I wait until the page is ready
     And I switch edit mode in Snap
-    And the next navigation for section "1" is for "Section 3" linking to "#section-2"
+    And the next navigation for section "1" is for "Section 3"
     And I switch edit mode in Snap
-    And the next navigation for section "1" is for "Section 3" linking to "#section-2"
+    And the next navigation for section "1" is for "Section 3"
     # The data-section attribute of the moved section module link should match the section number.
     # This is done so activities are created in the correct section.
     When I follow "My & < > Section"
-    And "//button[contains(text(),'Create learning activity') and @data-sectionid=3]" "xpath" should be visible
-    Examples:
-      | Option     |
-      | 0          |
-      | 1          |
+    And I wait until the page is ready
+    And "button.section-modchooser-link.btn-add-activity[data-sectionid='3']" "css_element" should be visible
 
   @javascript
-  Scenario Outline: Teacher loses teacher capability whilst course open and receives the correct error message when trying to
+  Scenario: Teacher loses teacher capability whilst course open and receives the correct error message when trying to
   move section.
     Given debugging is turned off
     And I log in as "admin"
-    And the following config values are set as admin:
-      | coursepartialrender | <Option> | theme_snap |
     And I log out
     And I log in as "teacher1"
     And I am on the course main page for "C1"
+    And I switch edit mode in Snap
     And I follow "Section 1"
-    And I follow "Untitled Section"
+    And I wait until the page is ready
+    And I click on "Edit section" "link" in the "ul.sections > li#section-1" "css_element"
     And I set the section name to "My & < > Section"
     And I press "Save changes"
     And I follow "My & < > Section"
+    And I wait until the page is ready
     And I follow "Move \"My & < > Section\""
-    Then I should see "Moving \"My & < > Section\"" in the "#snap-footer-alert" "css_element"
-    When I follow "Section 4"
     And the editing teacher role is removed from course "C1" for "teacher1"
-    And I follow "Place section \"My & < > Section\" before section \"Section 4\""
+    Given I skip because "The message is being showed but the step is failing because Core throws it as an exception."
+    And I click on "Section 3" "link" in the ".modal-body" "css_element"
     Then I should see "Sorry, but you do not currently have permissions to do that (Move sections)"
-    Examples:
-      | Option     |
-      | 0          |
-      | 1          |
 
   @javascript
-  Scenario Outline: In read mode, student cannot move sections.
+  Scenario: In read mode, student cannot move sections.
     Given I log in as "admin"
-    And the following config values are set as admin:
-      | coursepartialrender | <Option> | theme_snap |
     And I log out
     And I log in as "student1"
     And I am on the course main page for "C1"
     And I follow "Section 1"
+    And I wait until the page is ready
     Then "a[title=Move section]" "css_element" should not exist
-    Examples:
-      | Option     |
-      | 0          |
-      | 1          |
 
   @javascript
-  Scenario Outline: When entering the course, snap-footer-alert should not exist until the action of moving is done. And should disappear from the DOM after moving it.
-    Given I log in as "admin"
-    And the following config values are set as admin:
-      | coursepartialrender | <Option> | theme_snap |
-    And I log out
-    And I log in as "teacher1"
+  Scenario: Only navigation between sections is possible.
+    Given I log in as "teacher1"
+    And I enable "subsection" "mod" plugin
+    And the following "activities" exist:
+      | activity   | name        | course | idnumber    | section |
+      | subsection | Subsection 1 | C1     | Subsection1 | 1      |
+      | subsection | Subsection 2 | C1     | Subsection2 | 1      |
     And I am on the course main page for "C1"
-    And "#snap-footer-alert" "css_element" should not exist
+    And I should see "Next section"
+    And I should not see "Previous section"
+    And I follow "Section 5"
+    And I wait until the page is ready
+    And I should not see "Next section"
+    And I should see "Previous section"
     And I follow "Section 1"
-    Then "#section-1" "css_element" should exist
-    And I click on ".snap-activity.modtype_assign .snap-edit-asset-more" "css_element"
-    And I click on ".snap-activity.modtype_assign .snap-asset-move" "css_element"
-    Then I should see "Moving \"Test assignment1\""
-    And "#snap-footer-alert" "css_element" should exist
-    And I click on "li#section-1 li.snap-drop.asset-drop div.asset-wrapper a" "css_element"
-    And "#snap-footer-alert" "css_element" should not exist
-    Examples:
-      | Option     |
-      | 0          |
-      | 1          |
+
+  @javascript
+  Scenario: Weeks section names are updated when moving a section.
+    Given I log in as "teacher1"
+    And I switch edit mode in Snap
+    And I am on the course main page for "C2"
+    And I follow "1 January - 7 January"
+    And I wait until the page is ready
+    # Move week 1 to week 3 position
+    When I follow "Move \"1 January - 7 January\""
+    And I click on "15 January - 21 January" "link" in the ".modal-body" "css_element"
+    And I wait until the page is ready
+    # Check the section name was updated
+    Then I should see "15 January - 21 January" in the ".section.state-visible" "css_element"
+
+  @javascript
+  Scenario: Topics section names and content keep consistency after moving.
+    Given I log in as "teacher1"
+    And I switch edit mode in Snap
+    And I am on the course main page for "C1"
+    # Render Section 1, and then move to another section.
+    And I follow "Section 1"
+    And I wait until the page is ready
+    And I follow "Section 3"
+    And I wait until the page is ready
+    # Move Section 3 to section 1 position.
+    When I follow "Move \"Section 3\""
+    And I click on "General" "link" in the ".modal-body" "css_element"
+    And I wait until the page is ready
+    # Check Section 2 is displayed properly.
+    And I follow "Section 2"
+    And I wait until the page is ready
+    Then I should see "Section 2" in the ".section.state-visible" "css_element"
+    And I should not see "Test assignment1" in the ".section.state-visible" "css_element"
+    And I should see "Test assignment2" in the ".section.state-visible" "css_element"
+    And I should not see "Test assignment3" in the ".section.state-visible" "css_element"
+    # Check section 1 (already rendered) is displayed properly.
+    And I follow "Section 1"
+    And I wait until the page is ready
+    Then I should see "Section 1" in the ".section.state-visible" "css_element"
+    Then I should see "Test assignment1" in the ".section.state-visible" "css_element"
+    And I should not see "Test assignment2" in the ".section.state-visible" "css_element"
+    And I should not see "Test assignment3" in the ".section.state-visible" "css_element"

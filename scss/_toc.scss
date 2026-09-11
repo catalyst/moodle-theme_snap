@@ -22,85 +22,6 @@
 
 /* stylelint-disable declaration-no-important*/
 
-// -------------------------
-// Course toc & appendicies.
-// -------------------------
-#course-toc {
-    z-index: 1;
-    /* TOC heading. */
-    #toc-desktop-menu-heading {
-        text-transform: uppercase;
-        font-size: 1em;
-    }
-
-    /* TOC list. */
-    #chapters {
-        padding: 0;
-
-        h3 {
-            font-size: 1em;
-            margin-bottom: initial;
-        }
-
-        li {
-            padding-bottom: 0.3em;
-            line-height: 1;
-            h3 {
-                font-size: 1.1rem;
-            }
-        }
-
-        /* Chapter link */
-        .chapter-title {
-            display: inline-block;
-            margin-bottom: -0.3em;
-            line-height: 1.75;
-            width: 100%;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .snap-visible-section .chapter-title {
-            margin-bottom: 0;
-        }
-        span.text {
-            display: inline-block;
-        }
-    }
-
-    /* Section currently displayed. */
-    .snap-visible-section {
-        padding-left: 0.5em;
-        color: #fff;
-        .chapter-title {
-            border-radius: 0.5rem;
-            padding-right: 0.5rem;
-            padding-left: 0.5rem;
-        }
-        a,
-        span {
-            color: #fff;
-            text-decoration: none;
-        }
-        .completionstatus {
-            color: #666;
-        }
-    }
-
-    /* Completed section icon. */
-    .snap-section-complete {
-        width: 1.3em;
-        height: 1.3em;
-    }
-
-    .text small {
-        font-weight: 300;
-    }
-    .conditional .published-status {
-        color: $brand-warning;
-    }
-}
-
 div[data-flexitour="step-background"] {
     margin: 0;
 }
@@ -110,20 +31,16 @@ div[data-flexitour="step-background"] {
 // -------------------------
 
 #snap-course-wrapper {
+  .row {
     margin: 0 4%;
+  }
+    position: relative;
 }
 
 #snap-course-wrapper, div[data-flexitour="step-background"] {
-    #course-toc,
     #region-main {
         padding-top: 1em;
         outline: none;
-    }
-
-    /* TOC heading. */
-    #toc-desktop-menu-heading {
-        padding: 1em 0;
-        border-bottom: 1px solid $gray-lighter;
     }
 
     /* TOC list. */
@@ -194,17 +111,6 @@ div[data-flexitour="step-background"] {
 // Display when toc is part of page header.
 // -------------------------
 #page-header {
-    #course-toc {
-        border-top-left-radius: 0.5rem;
-        border-top-right-radius: 0.5rem;
-        margin: 2.5em auto -.5em;
-    }
-
-    .mast-image {
-        #course-toc {
-            margin-top: 6.6vh;
-        }
-    }
 
     #chapters {
         column-count: 2;
@@ -214,9 +120,6 @@ div[data-flexitour="step-background"] {
             column-count: 3;
         }
         span {
-            .published-status {
-                color: $brand-warning;
-            }
             &.completionstatus {
                 color: #666;
             }
@@ -287,7 +190,6 @@ div[data-flexitour="step-background"] {
 // Course search.
 // -------------------------
 #toc-search {
-    position: absolute;
     top: 1.25em;
     right: 0;
     max-width: 100%;
@@ -307,6 +209,7 @@ div[data-flexitour="step-background"] {
 
 #toc-search-input {
     border-radius: 50%;
+    margin-left: 1.15em;
     width: 3em;
     height: 3em;
     padding: 0 1.5em;
@@ -381,12 +284,7 @@ label[for="toc-search-input"]{
 // Course search in page header.
 // -------------------------
 #page-header {
-    #course-toc {
-        position: relative;
-    }
-
     #toc-search {
-        position: absolute;
         top: 0.5em;
         right: 0;
     }
@@ -405,87 +303,10 @@ label[for="toc-search-input"]{
     }
 }
 
-// -------------------------
-// Mobile toc.
-// -------------------------
-#toc-mobile-menu-toggle {
-    display: none;
-}
-
 @include media-breakpoint-down(md) {
-    .theme-snap  a#toc-mobile-menu-toggle {
-        display: block;
-    }
-    #course-toc {
-        position: fixed !important;
-        padding: 3em 4%;
-        margin: 0;
-        z-index: 1052;
-        background-color: transparent !important;
-        @include alakazam();
-        outline: none;
-
-        #chapters,
-        .toc-footer,
-        #toc-search,
-        #toc-desktop-menu-heading {
-            display: none;
-        }
-    }
-
-    #course-toc.state-visible {
-        top: 0;
-        left: 0;
-        bottom: 0;
-        display: block;
-        width: 100%;
-        height: 100%;
-        padding-top: 1em;
-        background-color: white !important;
-        overflow-y: scroll;
-
-        #chapters {
-            margin-top: 3rem;
-        }
-
-        #toc-search {
-            display: block;
-        }
-
-        #chapters,
-        .toc-footer {
-            display: block;
-            column-count: 1;
-            text-align: left;
-        }
-
-        #toc-mobile-menu-toggle.toc-mobile-menu-toggle-close{
-            position: fixed;
-            box-shadow: none;
-            top: 1.8em;
-            right: 2em;
-            width: 2em;
-            height: 2em;
-            background: white url("[[pix:theme|close_x]]") no-repeat 50% 50%;
-            background-size: 2em;
-        }
-    }
-
-    #toc-desktop-menu-heading {
-        display: none;
-    }
-    #toc-search {
-        display: block;
-        width: 100%;
-        padding-left: 2em;
-    }
     // Small screen course tools and create new section links.
     #page-header .toc-footer a {
         display: block;
-    }
-
-    #snap-course-wrapper nav#course-toc {
-        padding-top: 4em;
     }
 
     #toc-search-results {
@@ -493,10 +314,523 @@ label[for="toc-search-input"]{
     }
 }
 
+#toc-search:before {
+  content: '';
+  background: transparent url("[[pix:theme|search]]") no-repeat 50% 50%;
+  display: inline-block;
+  height: 1.5em;
+  width: 1.5em;
+  margin-right: -4em;
+  margin-bottom: -0.3em;
+}
+
+#toc-search-input.state-active,
+#toc-search-input:focus {
+  border-radius: 0;
+  box-shadow: none;
+  width: 320px;
+  background-color: white;
+  margin-left: -3em;
+}
+
+.drawerheader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  .drawertoggle {
+    margin-left: auto;
+  }
+}
+
+.drawerheadercontent {
+  order: -1;
+  margin-left: 0.5rem;
+}
+
+#courseindexdrawercontrols {
+  padding: 0;
+  margin: 0;
+  width: 29px;
+}
+
+.drawer.drawer-left .btn {
+    &.drawertoggle {
+      padding: 0;
+      margin: 0;
+      border-radius: 50%;
+      width: 25px;
+      height: 25px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: none;
+
+        i.icon {
+          color: white;
+          font-size: .75rem;
+        }
+    }
+
+    &.btn-icon {
+        i.fa-ellipsis-v {
+          font-size: 27px;
+        }
+
+        &.rounded-circle {
+          width: 40px;
+          height: 40px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+        }
+    }
+}
+
+.toc-footer {
+  padding: 1em 0;
+  margin-top: auto;
+
+  @media (min-width: 1277px) and (max-width: 1449px) {
+    padding: 1em 1em;
+  }
+
+  @media (min-width: 1450px) {
+    padding: 1em 2em;
+  }
+}
+
+.courseindex-item {
+  position: relative;
+}
+
+.courseindex-section {
+    .courseindex-item-content .courseindex-link:not([data-for="section_title"]) {
+      font-size: 0.95rem;
+    }
+
+    .courseindex-link {
+      display: inline-block !important;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      position: relative;
+      z-index: 1;
+
+      .activityiconcontainer.Forumicon {
+        filter: $communication-filter;
+      }
+    }
+
+    & .courseindex-item.restrictions {
+      & .courseindex-link:has(+ .current-badge + .courseindex-locked), & .courseindex-link:has(+ .courseindex-locked) {
+        margin-right: 2em;
+      }
+    }
+
+    &.current {
+        & > .courseindex-item > .courseindex-link:has(+ .current-badge) {
+          display: block;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          padding-right: 5.5em;
+        }
+
+        .current-badge {
+          position: absolute;
+          top: 30%;
+          right: 0.8rem;
+          transform: translateY(-50%);
+          z-index: 2;
+          pointer-events: none;
+          margin: 0.55em 0;
+        }
+
+        & > .courseindex-item.restrictions .current-badge:has(+ .courseindex-locked) {
+          right: 2.8rem;
+        }
+    }
+    .courseindex-locked {
+      position: absolute;
+      right: 0.25rem;
+    }
+}
+
+#course-index i.icon,
+#course-index p.tree_item:before {
+  color: inherit;
+}
+
+#course-index .completioninfo i.icon  {
+  font-size: 11px;
+  position: relative;
+  left: 8px;
+  bottom: 2px;
+}
+
+#courseindex #courseindex-content {
+  padding-left: 0.8em;
+}
+
+.courseindex .courseindex-item-content .courseindex-item {
+  padding: 0.1em 0.5em;
+}
+
+[id*="courseindex"].drawer-left .btn.drawertoggle i.icon {
+  font-size: 14px;
+}
+
 // -------------------------
-// Moving sections.
+// Sticky TOC styles.
 // -------------------------
-#course-toc .section-moving {
-    border-left: 0.3em solid;
-    padding-left: 0.3em;
+.theme-snap #theme_boost-drawers-courseindex {
+  position: sticky;
+  max-height: 100vh;
+  min-height: 100vh;
+  min-width: 100%;
+  overflow-y: auto;
+  z-index: 1021;
+}
+.path-course-view #page-wrapper {
+  position: absolute;
+  width: 27%;
+  @media (min-width: 480px) {
+    min-width: 20em;
+  }
+}
+.path-course-view .drawercontent {
+  height: 100vh;
+  padding-top: 5em;
+  nav.courseindex {
+    overflow: scroll;
+  }
+}
+.path-course-view.format-weeks .drawercontent,
+.path-course-view.format-topics .drawercontent {
+  padding-top: unset;
+}
+// Allow sticky TOC on small resolutions
+// Since core uses pageWrapper.style.overflow = 'hidden'
+// See theme/boost/amd/src/drawers.js
+@media (min-width: 480px) {
+  .path-course-view #page {
+    overflow-y: visible !important;
+    overflow-x: clip !important;
+  }
+}
+@media (max-width: 480px) {
+  .theme-snap div.drawer-left#theme_boost-drawers-courseindex {
+    position: fixed;
+    z-index: 1052;
+  }
+  .path-course-view .drawercontent {
+    height: calc(100% - 60px);;
+  }
+}
+
+// When TOC drawer is open
+// Make sure section footer navigation is at bottom.
+// for weeks and topics format only
+.format-topics #page.show-drawer-left,
+.format-weeks #page.show-drawer-left {
+  .course-content {
+    .section > .content {
+      min-height: calc(100vh - 2em);
+      display: flex;
+      flex-direction: column;
+    }
+  }
+  .section_footer {
+    margin-top: auto;
+  }
+}
+
+// -------------------------
+// courseindex icons
+// -------------------------
+.courseindex-section {
+    .activityiconcontainer {
+        display: inline-flex;
+        vertical-align: text-bottom;
+        padding: unset;
+        margin: unset;
+        width: 200%;
+
+        .lightboxgallery.icon {
+          filter: $lightbox-filter;
+        }
+
+        .forum.icon,
+        .hsuforum.icon,
+        .chat.icon {
+            filter: $communication-filter;
+        }
+
+        .assignment.icon,
+        .assign.icon,
+        .workshop.icon,
+        .journal.icon,
+        .attendance.icon {
+          filter: $assignment-filter;
+        }
+
+        .quiz.icon,
+        .choice.icon,
+        .feedback.icon,
+        .facetoface.icon{
+          filter: $content-filter;
+        }
+
+        .wiki.icon,
+        .glossary.icon,
+        .choicegroup.icon,
+        .data.icon {
+          filter: $information-filter;
+        }
+
+        .collaborate.icon {
+          filter: $collab-filter;
+        }
+
+        .questionnaire.icon,
+        .imscp.icon,
+        .survey.icon,
+        .lesson.icon {
+          filter: $questionnaire-filter;
+        }
+
+        .lightbox.icon {
+          filter: $lightbox-filter;
+        }
+
+        .resource.icon,
+        .lti.icon {
+          filter: $resource-filter;
+        }
+
+        .book.icon {
+          filter: $book-filter;
+        }
+
+        .folder.icon {
+          filter: $folder-filter;
+        }
+
+        .url.icon,
+        .kalvidres.icon,
+        .andrescosearch.icon{
+          filter: $url-filter;
+        }
+
+        .label.icon {
+          filter: $label-filter;
+        }
+
+        .page.icon {
+          filter: $page-filter;
+        }
+
+        .customcert.icon,
+        .certificate.icon {
+          filter: $certificate-filter;
+        }
+
+        .customquiz.icon {
+          filter: $customquiz-filter;
+        }
+
+        .livepoll.icon {
+          filter: $livepoll-filter;
+        }
+
+        .checklist.icon,
+        .dialogue.icon {
+          filter: $checklist-filter;
+        }
+
+        .adaptivequiz.icon,
+        .quizgame.icon {
+          filter: $quizlms-filter;
+        }
+
+        .zoom.icon {
+          filter: $zoom-filter;
+        }
+
+        .goone.icon {
+          filter: $go1-filter;
+        }
+
+        .ebcwep.icon,
+        .threesixo.icon,
+        .coursecertificate.icon,
+        .kalvidassign.icon {
+          filter: $ebcwep-filter;
+        }
+
+        .groupselect.icon,
+        .mindmap.icon,
+        .oublog.icon {
+          filter: $groupselect-filter;
+        }
+
+        .imscp.icon,
+        .scorm.icon {
+          filter: $imscp-filter;
+        }
+
+        .scheduler.icon {
+          filter: $scheduler-filter;
+        }
+
+      .activityicon {
+          width: 18px;
+          height: 18px;
+          position: absolute;
+        }
+    }
+}
+
+@media (max-width: 768px) {
+  #course-index {
+    .activityicon {
+      bottom: 6px;
+    }
+  }
+}
+
+// -------------------------
+// Course progress bar
+// -------------------------
+
+.drawer.drawer-left #course-toc-progress-bar {
+  color: gray;
+  background-color: #fff;
+  width: 90%;
+  font-size: 1.1rem;
+  border-radius: 1rem;
+  margin: 5% auto;
+  padding: 4% 5%;
+  .progress-text {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+  .progress {
+    height: .5rem;
+  }
+  .progress,
+  .progress-bar {
+    border-radius: 0.5rem;
+  }
+  @for $i from 0 through 100 {
+    .progress-bar[aria-valuenow="#{$i}"] {
+      @if $i < 20 {
+        background-color: $red;
+        color: white;
+      } @else if $i < 80 {
+        background-color: $yellow;
+        color: black;
+      } @else {
+        background-color: $green;
+        color: white;
+      }
+    }
+  }
+}
+
+body.snap_drawer_open {
+  .modal-backdrop.show {
+    display: none;
+  }
+}
+
+.snap-drawer-mobile-header {
+  display: none;
+}
+
+@media screen and (max-width: 480px) {
+  .drawerheader{
+    top: auto !important;
+
+    #courseindexdrawercontrolsmenubutton {
+      margin-top: -1rem;
+      margin-left: -2rem !important;
+    }
+
+    button.btn.drawertoggle  {
+      position: fixed !important;
+      top: 1.3rem;
+
+      .icon {
+        font-size: 20px !important;
+      }
+    }
+  }
+
+  #toc-desktop-menu-heading {
+    width: 85%;
+  }
+
+  .snap-drawer-mobile-header {
+    display: block;
+    padding: 1rem;
+    color: white;
+    h2 {
+      color: white;
+    }
+  }
+}
+// -------------------------
+// Section progress indicator.
+// -------------------------
+.drawer.drawer-left .snap-section-progress-wrapper {
+    background-color: #e9ecef;
+    border-radius: 0.5rem;
+    padding: 0.2rem 0.75rem;
+    margin: .3rem 0 .5rem 2rem;
+
+    .snap-section-progress-content {
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      gap: 0.5rem;
+      width: 100%;
+    }
+
+    .snap-section-progress-text {
+      font-size: 0.9rem;
+      color: #565656;
+      margin: 0;
+    }
+
+    .snap-section-progress-icon {
+      color: #357a32;
+      font-size: 0.9rem;
+      display: none;
+      flex-shrink: 0;
+    }
+
+    &.snap-section-progress-complete {
+        .snap-section-progress-text {
+          color: #357a32;
+        }
+    }
+}
+
+// Define the animation for new activities.
+@keyframes blink-new-activity {
+  0% { background-color: transparent; }
+  25% { background-color: #EEF0F6; }
+  50% { background-color: transparent; }
+  75% { background-color: #EEF0F6; }
+  100% { background-color: transparent; }
+}
+
+// Highlight the newly created activity with a blink animatronic.
+.highlight-new-activity {
+  animation: blink-new-activity 2s ease-in-out forwards;
 }

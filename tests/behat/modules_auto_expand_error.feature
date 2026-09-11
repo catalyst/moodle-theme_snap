@@ -38,8 +38,9 @@ Feature: When setting an erroneous field in settings, snap auto-expands area.
     Given I log in as "admin"
     And I am on "Course 1" course homepage
     And I follow "Section 1"
-    And I click on ".snap-edit-asset-more" "css_element"
-    And I click on ".snap-edit-asset" "css_element"
+    And I wait until the page is ready
+    And I open "Assignment One" actions menu
+    And I choose "Edit settings" in the open action menu
     And I expand all fieldsets
     And I set the field "id_grade_modgrade_point" to "150"
     Then I press "Save and display"
@@ -51,8 +52,9 @@ Feature: When setting an erroneous field in settings, snap auto-expands area.
     Given I log in as "admin"
     And I am on "Course 1" course homepage
     And I follow "Section 1"
-    And I click on ".snap-edit-asset-more" "css_element"
-    And I click on ".snap-edit-asset" "css_element"
+    And I wait until the page is ready
+    And I open "Assignment One" actions menu
+    And I choose "Edit settings" in the open action menu
     And I expand all fieldsets
     And I set the field "id_gradepass" to "text"
     Then I press "Save and display"
@@ -64,8 +66,9 @@ Feature: When setting an erroneous field in settings, snap auto-expands area.
     Given I log in as "admin"
     And I am on "Course 1" course homepage
     And I follow "Section 1"
-    And I click on ".snap-edit-asset-more" "css_element"
-    And I click on ".snap-edit-asset" "css_element"
+    And I wait until the page is ready
+    And I open "Assignment One" actions menu
+    And I choose "Edit settings" in the open action menu
     And I expand all fieldsets
     And I set the field "id_cutoffdate_enabled" to "1"
     And I set the field "id_cutoffdate_year" to "1980"
@@ -78,8 +81,9 @@ Feature: When setting an erroneous field in settings, snap auto-expands area.
     Given I log in as "admin"
     And I am on "Course 1" course homepage
     And I follow "Section 1"
-    And I click on ".snap-edit-asset-more" "css_element"
-    And I click on ".snap-edit-asset" "css_element"
+    And I wait until the page is ready
+    And I open "Assignment One" actions menu
+    And I choose "Edit settings" in the open action menu
     And I expand all fieldsets
     And I set the field "id_gradingduedate_enabled" to "1"
     And I set the field "id_gradingduedate_year" to "1980"

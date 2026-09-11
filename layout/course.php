@@ -22,26 +22,21 @@
  * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use theme_snap\local;
+
 defined('MOODLE_INTERNAL') || die();
 
 require(__DIR__.'/header.php');
 
 $coursemainpage = strpos($PAGE->pagetype, 'course-view-') === 0;
-$tocformat = ($COURSE->format == 'topics' || $COURSE->format == 'weeks');
-// Check if the toc is displayed list or top - used to add layout in this file.
-$leftnav = true;
-if (!empty($PAGE->theme->settings->leftnav)) {
-    if ($PAGE->theme->settings->leftnav == 'top') {
-        $leftnav = false;
-    }
-}
+
 $mastimage = '';
 // Check we are in a course (not the site level course), and the course is using a cover image.
 if ($COURSE->id != SITEID && !empty($coverimagecss)) {
     $mastimage = 'mast-image';
 }
 // Check if in current path we must to hide TOC.
-$pathurl = $PAGE->url->get_path();
+$pathurl = local::current_url_path();
 $pathurl = $OUTPUT->get_path_hiddentoc($pathurl);
 ?>
 <!-- Moodle js hooks -->
@@ -56,13 +51,11 @@ $pathurl = $OUTPUT->get_path_hiddentoc($pathurl);
 echo $OUTPUT->custom_menu_spacer();
 ?>
 <div id="page-header" class="clearfix <?php echo $mastimage; ?>">
-    <nav class="breadcrumb-nav" aria-label="breadcrumbs"><?php echo $OUTPUT->snapnavbar($mastimage); ?></nav>
+    <nav class="breadcrumb-nav" aria-label="breadcrumbs"><?php echo $OUTPUT->navbar(); ?></nav>
 
-    <div id="page-mast">
     <?php
     if ($coursemainpage) {
         $output = $PAGE->get_renderer('core', 'course');
-        echo $output->course_format_warning();
     }
     // Allow individual course formats to set their preferred values.
     switch ($COURSE->format) {
@@ -72,30 +65,14 @@ echo $OUTPUT->custom_menu_spacer();
         default:
             break;
     }
-    echo $OUTPUT->page_heading();
-    echo $OUTPUT->course_header();
-    // Note, there is no blacklisting for the edit blocks button on course pages.
-    echo $OUTPUT->page_heading_button();
-    if ($tocformat && !$leftnav && !$pathurl) {
-        echo $OUTPUT->course_toc();
-    }
+    echo $OUTPUT->snap_page_header();
     ?>
-    </div>
 </div>
 <?php
-if ($tocformat && $leftnav) {
-    echo '<div id="snap-course-wrapper">';
-    echo '<div class="row">';
-    // If current path is a level up view, we hide TOC.
-    if ($pathurl === true) {
-        echo '<div class="col-lg-12">';
-    } else {
-        echo '<div class="col-lg-3">';
-        echo $OUTPUT->course_toc();
-        echo '</div>';
-        echo '<div class="col-lg-9">';
-    }
-}
+echo '<div id="snap-course-wrapper">';
+require __DIR__ . '/course_index_drawer.php';
+echo '<div class="row">';
+echo '<div class="col-lg-12">';
 ?>
 <section id="region-main">
 
@@ -105,6 +82,7 @@ $output = $PAGE->get_renderer('core', 'course');
 echo $output->snap_footer_alert();
 echo $OUTPUT->course_modchooser();
 echo $OUTPUT->main_content();
+echo \theme_snap\output\shared::course_tools(true);
 echo $OUTPUT->course_content_footer();
 ?>
 </section>
@@ -112,11 +90,13 @@ echo $OUTPUT->course_content_footer();
 require __DIR__.'/blocks_drawer.php';
 echo $OUTPUT->snap_feeds_side_menu();
 
-if ($tocformat && $leftnav) {
-    echo '</div> <!-- close section -->';
-    echo '</div> <!-- close row -->';
-    echo '</div> <!-- close course wrapper -->';
+// Call listeners for Section actions from Core.
+if (!$this->page->user_is_editing()) {
+    $PAGE->requires->js_call_amd('core_course/actions', 'initCoursePage', array($COURSE->format));
 }
+echo '</div> <!-- close section -->';
+echo '</div> <!-- close row -->';
+echo '</div> <!-- close course wrapper -->';
 
 if ($coursemainpage) {
     $coursefooter = $output->course_footer();

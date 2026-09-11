@@ -156,8 +156,8 @@
 // Center play button.
 .video-js {
     .vjs-big-play-button {
-        top: calc(50% - 2rem);
-        left: calc(50% - 2rem);
+        margin-top: -1.2em;
+        margin-left: -1.2em;
         line-height: 4rem;
         height: 4rem;
         width: 4rem;
@@ -946,7 +946,7 @@ section#snap-add-new-section #summary-editor_parent #summary-editor_tbl {
  */
 #page-local-myaccount-view,
 #page-admin-local-myaccount-view {
-    div.mr_html_tabs > ul > li.nav-item a.nav-link.active {
+    div.mr_html_tabs > nav > ul > li.nav-item a.nav-link.active {
         background-color: $brand-primary;
     }
 
@@ -1000,6 +1000,10 @@ section#snap-add-new-section #summary-editor_parent #summary-editor_tbl {
             font-size: 20px;
         }
     }
+}
+
+#page-my-index #local-myaccount-globalalerts {
+    padding: 0 4em 0 4em;
 }
 
 /**
@@ -1076,9 +1080,6 @@ body.format-tiles.editing {
         .activity-info {
             margin-left: auto;
             margin-right: 3rem;
-        }
-        .my-1 {
-            margin-left: 10%;
         }
     }
 
@@ -1377,7 +1378,6 @@ body.format-tiles.editing {
 
     // Fix label content elements.
     .modtype_label {
-        margin: 1em 1%;
         &.activity-wrapper {
             .my-1 {
                 margin-left: 5%;
@@ -1424,10 +1424,6 @@ body.format-tiles.editing {
     .alert-block {
         display: inline-block;
         margin-left: 2em;
-    }
-    .activityicon {
-        min-height: 32px;
-        min-width: 32px;
     }
 }
 
@@ -1832,4 +1828,35 @@ body#page-admin-plugins {
             filter: none;
         }
     }
+}
+// Turnitin course end date modal
+#page-admin-mod-turnitintooltwo-settings_extras {
+    .edit_end_date_form {
+        #cboxWrapper,
+        #cboxContent,
+        #cboxLoadedContent {
+            min-height: 25em !important;
+        }
+        @media (max-width: 576px) {
+            #cboxLoadedContent .mform .fitem .felement {
+                width: 100% !important;
+            }
+            #cboxWrapper,
+            #cboxContent,
+            #cboxLoadedContent {
+                min-height: 30em !important;
+            }
+        }
+    }
+}
+
+// -------------------------
+//  Wiris Editor
+// -------------------------
+.wrs_editor img.wrs_image,
+.wrs_modal_dialogContainer img.wrs_image {
+    max-width: none;
+    max-height: none;
+    width: auto;
+    height: auto;
 }

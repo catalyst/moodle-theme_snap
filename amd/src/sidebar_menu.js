@@ -15,6 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 import {isSmall} from 'core/pagehelpers';
+import {addCloseButtonToBlockSettings} from './util';
 import {setUserPreferences, getUserPreferences} from 'core_user/repository';
 
 /**
@@ -30,13 +31,21 @@ const SELECTORS = {
     TRIGGER: '.snap-sidebar-menu-trigger',
     TRIGGER_ICON: '.snap-sidebar-menu-trigger i',
     HEADER: 'header',
-    DRAWER_BUTTON: '.snap-sidebar-menu-item[data-activeselector]',
+    DRAWER_BUTTON: '.snap-sidebar-menu-item[data-activeselector], ' +
+        '.drawer-toggler.drawer-left-toggle [data-activeselector]',
+    COURSE_INDEX_DRAWER_BUTTON: '.drawer-toggler.drawer-left-toggle',
     MESSAGES_POPOVER: '[data-region="popover-region-messages"]',
     CLOSE_DRAWER_BUTTON: '[data-action="closedrawer"]',
     SIDEBAR_MENU_ITEM: '.snap-sidebar-menu-item',
     NAV_UNPINNED: '#mr-nav.headroom--unpinned',
     GOTO_TOP_LINK: '#goto-top-link',
-    COURSE_TOC: '#course-toc',
+    PAGE_HEADER: 'page-header',
+    DRAWER_LEFT: '.drawer-left.drawer',
+    SNAP_COURSE_FOOTER: 'snap-course-footer',
+    MODAL_BACKDROP: 'body > div > div.modal-backdrop',
+    CLOSE_MESSAGE_DRAWER_BUTTON: '[id^="message-drawer-"] a[data-action="closedrawer"]',
+    MESSAGE_APP_CLASS: 'div[id^=\'drawer-\'] > div.message-app',
+    MESSAGE_DRAWER_TOGGLE: 'a[id^="message-drawer-toggle"]',
 };
 
 const CLASSES = {
@@ -47,17 +56,19 @@ const CLASSES = {
     ROTATE: 'rotate-180',
     STATE_VISIBLE: 'state-visible',
     POSITIONING_OFFSCREEN: 'positioning-offscreen',
+    DRAWER_OPEN: 'snap_drawer_open',
 };
 
 const DRAWERS = {
     SELECTORS: [
-        '.drawer',
+        '.drawer:not(#theme_boost-drawers-courseindex)',
         '.block_settings.block',
         '#snap_feeds_side_menu',
         '.drawer:has(.message-app)'
     ],
     ACTIVE_SELECTORS: [
-        '.drawer.show',
+        '.drawer-left.drawer.show',
+        '.drawer-right.drawer.show',
         '.block_settings.block.state-visible',
         '#snap_feeds_side_menu.state-visible',
         '.drawer:not(.hidden):has(.message-app)'
@@ -69,6 +80,7 @@ const POPOVERS_DROPDOWNS = {
         '#user-menu-toggle', // User menu
         '#nav-intellicart-popover-container', // Intellicart
         '#nav-notification-popover-container', // Notifications
+        '#local-accessibility-buttoncontainer', // Accessibility
     ]
 };
 
@@ -87,6 +99,10 @@ const PREFERENCES = {
 const FORCEOPEN_BODY_IDS = [
     'page-mod-quiz-attempt',
     'page-mod-book-view'
+];
+
+const FORCEBLOCK_BODY_IDS = [
+    'page-mod-book-edit',
 ];
 
 const PREFERENCE_MAP = {
@@ -108,6 +124,12 @@ const toggleSidebar = () => {
     sidebar.classList.toggle(CLASSES.SHOW);
     icon.classList.toggle(CLASSES.ROTATE);
     updateElementPositions();
+    // Keep any declaring trigger's aria-expanded attribute in sync.
+    const trigger = document.querySelector(SELECTORS.TRIGGER);
+    const isOpen = sidebar.classList.contains(CLASSES.SHOW);
+    if (trigger) {
+        setAriaExpanded(trigger, isOpen);
+    }
     
     // If we're closing the sidebar, close any open drawers
     if (isClosing) {
@@ -172,6 +194,39 @@ const updateElementPositions = (selectors = null) => {
             });
         });
     }
+
+    /**
+     * Updates the vertical position of the course index button so that it:
+     * - Is positioned at 40% of the viewport height by default,
+     * - Never overlaps or sits above the bottom of the page header,
+     * - Never overlaps or goes below the top of the footer,
+     *
+     * Ensures the button stays visible and properly positioned between header and footer,
+     * and updates its position dynamically on window resize and scroll events.
+     */
+    const courseindexbutton = document.querySelector(SELECTORS.COURSE_INDEX_DRAWER_BUTTON);
+    const drawer = document.querySelector(SELECTORS.DRAWER_LEFT);
+    const footer = document.getElementById(SELECTORS.SNAP_COURSE_FOOTER);
+
+    if (courseindexbutton && drawer) {
+        const updateButtonVisibility = () => {
+            const pageHeader = document.getElementById(SELECTORS.PAGE_HEADER);
+            const headerRect = pageHeader.getBoundingClientRect();
+            const footerRect = footer.getBoundingClientRect();
+
+            const top40Percent = window.innerHeight * 0.4;
+
+            const buttonHeight = courseindexbutton.offsetHeight || 0;
+            const maxTop = footerRect.top - buttonHeight - 10;
+
+            let newTop = Math.max(headerRect.bottom + 1, top40Percent);
+
+            newTop = Math.min(newTop, maxTop);
+            courseindexbutton.style.top = `${newTop}px`;
+
+        };
+        updateButtonVisibility();
+    }
 };
 
 /**
@@ -204,9 +259,13 @@ const handleDrawerButtonClick = (e) => {
             closeOtherDrawers(activeSelector, button);
             button.classList.add(CLASSES.ACTIVE);
             setDrawerPreference(activeSelector, true);
+            toggleBodyDrawerClass();
+            setAriaExpanded(button, true);
         } else {
             button.classList.remove(CLASSES.ACTIVE);
             setDrawerPreference(activeSelector, false);
+            toggleBodyDrawerClass();
+            setAriaExpanded(button, false);
         }
     }, 50); // Small delay to allow the drawer state to update
 };
@@ -246,6 +305,7 @@ const closeOtherDrawers = (currentSelector, currentButton) => {
             }
             setDrawerPreference(activeSelector, false);
             button.classList.remove(CLASSES.ACTIVE);
+            setAriaExpanded(button, false);
         }
     });
 };
@@ -278,6 +338,7 @@ const closeAllDrawers = () => {
                 button.click();
             }
             button.classList.remove(CLASSES.ACTIVE);
+            setAriaExpanded(button, false);
         }
     });
 };
@@ -293,16 +354,25 @@ const handleMessagesPopoverClick = (e) => {
         const isCollapsed = e.currentTarget.classList.contains(CLASSES.COLLAPSED);
         if (isCollapsed) {
             e.currentTarget.classList.remove(CLASSES.COLLAPSED);
+            setAriaExpanded(e.currentTarget, true);
         } else {
             e.currentTarget.classList.add(CLASSES.COLLAPSED);
+            setAriaExpanded(e.currentTarget, false);
         }
     }
 };
 
 /**
- * Set the Actual Drawer based on user preferences.
+ * Applies initial drawer state based on user preferences and page context.
  *
- * @return {Promise}
+ * This function runs on page load to restore the drawer (e.g. blocks drawer)
+ * according to saved preferences. It may also force the drawer to open or remain
+ * closed based on specific page conditions.
+ *
+ * Should only be used during initialization. Calling it later may cause
+ * inconsistent UI behavior.
+ *
+ * @return {Promise<void>}
  */
 const setActiveDrawer = async() => {
     let preferences = await getUserPreferences(null, M.cfg.userId);
@@ -324,8 +394,14 @@ const setActiveDrawer = async() => {
             preferencesArray[pref] = preferences[pref];
         }
         if (pref === PREFERENCES.BLOCKS_DRAWER) {
-            if (FORCEOPEN_BODY_IDS.includes(document.body.id)) {
+            let bodyId = document.body.id;
+            // Force open but not in small screen sizes.
+            if (FORCEOPEN_BODY_IDS.includes(bodyId) && window.innerWidth > 500) {
                 preferencesArray[pref] = 1;
+            }
+            // Prevents the drawer from opening automatically on specific pages, but does not disable manual opening.
+            if (FORCEBLOCK_BODY_IDS.includes(bodyId)) {
+                preferencesArray[pref] = 0;
             }
         }
     });
@@ -377,11 +453,13 @@ const handleCloseDrawerClick = () => {
     // Remove active classes from all drawer buttons
     document.querySelectorAll(SELECTORS.DRAWER_BUTTON).forEach(button => {
         button.classList.remove(CLASSES.ACTIVE);
+        document.body.classList.remove(CLASSES.DRAWER_OPEN);
     });
     
     // Add collapsed class to messages popover if it's open
     const messagesPopover = document.querySelector(SELECTORS.MESSAGES_POPOVER);
     if (messagesPopover && !messagesPopover.classList.contains(CLASSES.COLLAPSED)) {
+        setDrawerPreference(ACTIVE_SELECTORS.MESSAGES_DRAWER, false);
         messagesPopover.classList.add(CLASSES.COLLAPSED);
     }
 };
@@ -422,12 +500,40 @@ const setupEventListeners = () => {
     // Add click event listeners to drawer buttons
     document.querySelectorAll(SELECTORS.DRAWER_BUTTON).forEach(button => {
         button.addEventListener('click', handleDrawerButtonClick);
+        blockUnwantedFocus(button);
     });
     
     // Add click event listener to messages popover
     const messagesPopover = document.querySelector(SELECTORS.MESSAGES_POPOVER);
     if (messagesPopover) {
         messagesPopover.addEventListener('click', handleMessagesPopoverClick);
+
+        // We have an event from Core subscribed with PubSub, that always runs after Snap has run,
+        // and it creates the unwanted modal backdrop, see message/amd/src/message_drawer.js.
+        const messageDrawerPopover = document.querySelector(SELECTORS.MESSAGES_POPOVER);
+        const messageDrawerCloseIcon = document.querySelector(SELECTORS.CLOSE_MESSAGE_DRAWER_BUTTON);
+        const dismissCoreModalBackdrop = function(mutations) {
+            for (const mutation of mutations) {
+                if (mutation.type === 'childList') {
+                    const messagesPopoverCoreModalBackdrop =
+                        document.querySelector(SELECTORS.MODAL_BACKDROP);
+                    if (messagesPopoverCoreModalBackdrop && (document.activeElement === messageDrawerPopover
+                        || document.activeElement === messageDrawerCloseIcon)) {
+                        messagesPopoverCoreModalBackdrop.remove();
+                    }
+                    const messagePopoverIsHidden =
+                        document.querySelector(SELECTORS.MESSAGE_APP_CLASS)
+                            .parentElement.classList.contains('hidden');
+                    const messageDrawerIcon = document.querySelector(SELECTORS.MESSAGE_DRAWER_TOGGLE);
+
+                    if (messagePopoverIsHidden && messageDrawerIcon === document.activeElement) {
+                        messageDrawerIcon.blur();
+                    }
+                }
+            }
+        };
+        const messageDrawerObserver = new MutationObserver(dismissCoreModalBackdrop);
+        messageDrawerObserver.observe(document.body, {subtree: true, childList: true});
     }
     
     // Add click event listeners to elements with data-action="closedrawer"
@@ -443,6 +549,7 @@ const setupEventListeners = () => {
  * Initialize the sidebar menu functionality
  */
 export const init = () => {
+    addCloseButtonToBlockSettings();
     setupEventListeners();
     updateElementPositions();
     
@@ -475,6 +582,28 @@ const queryActiveDrawers = (selector) => {
 };
 
 /**
+ * If the element (or its clickable child) declares an ariaexpanded control attribute,
+ * set the proper `aria-expanded` value.
+ * Supports both `ariaexpandedcontrol` and `aria-expanded-control` attribute names.
+ * @param {Element} element The element or container to inspect
+ * @param {boolean} expanded Whether the control should be marked expanded
+ */
+const setAriaExpanded = (element, expanded) => {
+    if (!element) {
+        return;
+    }
+
+    const target = element.querySelector('a, button') || element;
+
+    // Only update `aria-expanded` if the element (or its clickable child)
+    // already has that attribute. This avoids introducing the attribute
+    // where it wasn't present.
+    if (target.hasAttribute('aria-expanded') || element.hasAttribute('aria-expanded')) {
+        target.setAttribute('aria-expanded', expanded ? 'true' : 'false');
+    }
+};
+
+/**
  * Reposition the "Go to Top" button based on open drawers
  */
 const repositionGotoTopLink = () => {
@@ -498,7 +627,7 @@ const repositionGotoTopLink = () => {
             if (activeDrawers.length > 0) {
                 // Get the first active drawer found for this selector type
                 const drawer = activeDrawers[0];
-                if (drawer.offsetWidth > 0) {
+                if (drawer.offsetWidth > 0 && !drawer.classList.contains('drawer-left')) {
                     // Get the width of the drawer
                     const drawerWidth = drawer.offsetWidth;
                     // Add margin to position the link to the left of the drawer
@@ -524,6 +653,11 @@ const toggleSidebarOnHorizontalScroll = (scrollX) => {
             // Hide sidebar
             sidebar.style.right = '-100%';
             sidebar.classList.remove('show');
+            // Ensure trigger (if it declares aria control) is updated.
+            const trigger = document.querySelector(SELECTORS.TRIGGER);
+            if (trigger) {
+                setAriaExpanded(trigger, false);
+            }
             // Hide active drawers
             DRAWERS.ACTIVE_SELECTORS.forEach(selector => {
                 const activeDrawers = queryActiveDrawers(selector); // Use the helper function
@@ -536,6 +670,11 @@ const toggleSidebarOnHorizontalScroll = (scrollX) => {
         // When returning to scroll position 0
         sidebar.style.right = '';
         sidebar.classList.add('show');
+        // Restore trigger aria if present.
+        const trigger = document.querySelector(SELECTORS.TRIGGER);
+        if (trigger) {
+            setAriaExpanded(trigger, true);
+        }
         // Restore active drawers visibility
         DRAWERS.ACTIVE_SELECTORS.forEach(selector => {
             const activeDrawers = queryActiveDrawers(selector); // Use the helper function
@@ -596,4 +735,84 @@ const setupPopoverClickHandlers = () => {
             }, true);
         });
     });
+};
+
+/**
+ * Toggle the "snap_drawer_open" class in the body, used to apply styles if necessary.
+ */
+const toggleBodyDrawerClass = () => {
+    const drawerButtons = document.querySelectorAll(SELECTORS.DRAWER_BUTTON);
+    let drawerActive = false;
+    drawerButtons.forEach(button => {
+        const activeSelector = button.dataset.activeselector;
+        if (!activeSelector) {
+            return;
+        }
+
+        const activeElements = document.querySelectorAll(activeSelector);
+        const isActive = Array.from(activeElements).some(el =>
+            el.classList.contains(CLASSES.SHOW) ||
+            el.classList.contains(CLASSES.ACTIVE) ||
+            !el.classList.contains(CLASSES.COLLAPSED) // Consider not collapsed as active
+        );
+
+        if (isActive) {
+            drawerActive = true;
+        }
+    });
+    if (drawerActive) {
+        document.body.classList.add(CLASSES.DRAWER_OPEN);
+    } else {
+        document.body.classList.remove(CLASSES.DRAWER_OPEN);
+    }
+};
+
+// Shared global state needed for blockUnwantedFocus.
+let userInitiated = false;
+
+// Global listeners (run once)
+window.addEventListener("mousedown", () => { userInitiated = true; }, true);
+window.addEventListener("mouseup",   () => { userInitiated = false; }, true);
+
+window.addEventListener("keydown", (e) => {
+    if (e.key === "Tab") {
+        userInitiated = true;
+    }
+}, true);
+
+window.addEventListener("keyup", () => { userInitiated = false; }, true);
+
+/**
+ * Block unwanted focus on drawer buttons. This is a needed patch because Core has
+ * some focus handling on these buttons that we need to override.
+ * @param {*} button 
+ */
+const blockUnwantedFocus = (button) => {
+    if (!button) {
+        return;
+    }
+
+    button.addEventListener(
+        "focus", (e) => {
+            const target = e.target;
+
+            if (!userInitiated) {
+                const prevOutline = target.style.outline;
+                const prevBoxShadow = target.style.boxShadow;
+
+                target.style.outline = "none";
+                target.style.boxShadow = "none";
+
+                requestAnimationFrame(() => {
+                    if (document.activeElement === target) {
+                        target.blur();
+                    }
+
+                    requestAnimationFrame(() => {
+                        target.style.outline = prevOutline;
+                        target.style.boxShadow = prevBoxShadow;
+                    });
+                });
+            }
+        }, true);
 };

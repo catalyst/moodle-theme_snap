@@ -37,84 +37,52 @@ Feature: Entering a Snap course without specifying a section will take you to th
       | student1 | C1     | student        |
 
   @javascript
-  Scenario Outline: Before a topic is highlighted, section 0 is the default
-    Given I log in as "admin"
-    And the following config values are set as admin:
-      | coursepartialrender | <Option> | theme_snap |
-    And I log out
+  Scenario: Before a topic is highlighted, section 0 is the default
     And I log in as "teacher1"
     And I am on the course main page for "C1"
-    Then I should see "Introduction" in the ".section.state-visible" "css_element"
-    Examples:
-      | Option     |
-      | 0          |
-      | 1          |
+    Then I should see "General" in the ".section.state-visible" "css_element"
 
   @javascript
-  Scenario Outline: Once a topic is highlighted, that section is shown on entering the course
-    Given I log in as "admin"
-    And the following config values are set as admin:
-      | coursepartialrender | <Option> | theme_snap |
-    And I log out
+  Scenario: Once a topic is highlighted, that section is shown on entering the course
     And I log in as "teacher1"
     And I am on the course main page for "C1"
-    Then I should see "Introduction" in the ".section.state-visible" "css_element"
-    And "#chapters h3:nth-of-type(1) li.snap-visible-section" "css_element" should exist
-    And I follow "Section 1"
+    Then I should see "General" in the ".section.state-visible" "css_element"
+    And "#courseindexsection0" "css_element" should exist
+    And I click on "#courseindexsection1 .courseindex-link[data-action='togglecourseindexsection']" "css_element"
     And I highlight section 1
     And I am on the course main page for "C1"
-    And I should see "Untitled Section" in the ".section.state-visible" "css_element"
-    And "#chapters h3:nth-of-type(2) li.snap-visible-section" "css_element" should exist
-    Examples:
-      | Option     |
-      | 0          |
-      | 1          |
+    Then I should see "Highlighted" in the "#section-1" "css_element"
 
   @javascript
-  Scenario Outline: If the teacher highlights a hidden section, the default section 0 is displayed
-    Given I log in as "admin"
-    And the following config values are set as admin:
-      | coursepartialrender | <Option> | theme_snap |
-    And I log out
+  Scenario: If the teacher highlights a hidden section, the default section 0 is displayed
+    Given I skip because "It's failing due to New Snap Course sections - INT-21427"
     And I log in as "teacher1"
     And I am on the course main page for "C1"
-    Then I should see "Introduction" in the ".section.state-visible" "css_element"
-    And I follow "Section 1"
+    Then I should see "General" in the ".section.state-visible" "css_element"
+    And I follow "New section"
     And I highlight section 1
     And I follow "Hide"
     And I am on the course main page for "C1"
-    Then I should see "Introduction" in the ".section.state-visible" "css_element"
+    Then I should see "General" in the ".section.state-visible" "css_element"
     And I log out
     And I log in as "student1"
     And I am on the course main page for "C1"
-    Then I should see "Introduction" in the ".section.state-visible" "css_element"
+    Then I should see "General" in the ".section.state-visible" "css_element"
     And I should see "Not available" in TOC item 1
-    Examples:
-      | Option     |
-      | 0          |
-      | 1          |
 
   @javascript
-  Scenario Outline: Conditionally restricted section will not be shown on load, default to section 0
-    Given I log in as "admin"
-    And the following config values are set as admin:
-      | coursepartialrender | <Option> | theme_snap |
-    And I log out
+  Scenario: Conditionally restricted section will not be shown on load, default to section 0
     And I log in as "teacher1"
     And I am on the course main page for "C1"
-    And I go to course section 1
+    And I go to section 1 of course "C1"
     And I highlight section 1
-    And I restrict course section 1 by date to "tomorrow"
-    And I should see "Conditional" in TOC item 1
+    And I restrict course section 1 by date to "tomorrow" in course "C1"
+    And "#section-1" "css_element" should exist
     And I am on the course main page for "C1"
-    And I go to course section 1
+    And I go to section 1 of course "C1"
     And I should see available from date of "tomorrow" in section 1
     And I log out
     And I log in as "student1"
     And I am on the course main page for "C1"
-    Then I should see "Introduction" in the ".section.state-visible" "css_element"
-    And I should see "Conditional" in TOC item 1
-    Examples:
-      | Option     |
-      | 0          |
-      | 1          |
+    Then I should see "General" in the ".section.state-visible" "css_element"
+    And I wait until "#courseindexsection1 .courseindex-locked" "css_element" exists

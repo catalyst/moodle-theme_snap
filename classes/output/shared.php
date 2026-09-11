@@ -28,12 +28,12 @@ defined('MOODLE_INTERNAL') || die();
 
 use context_course;
 use core_component;
-use html_writer;
-use moodle_url;
+use \core\output\html_writer;
+use \core\url as moodle_url;
 use stdClass;
 use theme_snap\local;
 use theme_snap\renderables\login_alternative_methods;
-use single_button;
+use \core\output\single_button;
 
 require_once($CFG->dirroot.'/grade/querylib.php');
 require_once($CFG->libdir.'/gradelib.php');
@@ -41,7 +41,7 @@ require_once($CFG->dirroot.'/grade/lib.php');
 require_once($CFG->libdir.'/badgeslib.php');
 require_once($CFG->dirroot.'/repository/lib.php');
 
-class shared extends \renderer_base {
+class shared extends \core\output\renderer_base {
 
     /**
      * Taken from /format/renderer.php
@@ -229,8 +229,6 @@ EOF;
             'groupsnone',
             'groupsvisible',
             'groupsseparate',
-            //'markthistopic',TODO: Review how to address this string deprecation.
-            //'markedthistopic', TODO: Review how to address this string deprecation.
             'moveleft',
             'movesection',
             'movecoursemodule',
@@ -288,7 +286,7 @@ EOF;
      * @return void
      */
     public static function page_requires_js() {
-        global $CFG, $PAGE, $COURSE, $USER, $OUTPUT;
+        global $CFG, $PAGE, $COURSE, $USER, $OUTPUT, $SESSION;
 
         $PAGE->requires->jquery();
         $PAGE->requires->js_amd_inline("require(['theme_boost/loader']);");
@@ -305,17 +303,12 @@ EOF;
             'forumlastpost',
             'loading',
             'more',
-            'moving',
-            'movingcount',
-            'movehere',
-            'movefailed',
-            'movingdropsectionhelp',
-            'movingstartedhelp',
             'notpublished',
             'visibility',
             'snapfeedsblocktitle',
             'imageproperties',
             'coverimagedesc',
+            'covercategoryimagedesc',
             'coverimagecropperdesc',
             'browserepositories',
             'selectimage',
@@ -365,7 +358,8 @@ EOF;
                 $modinfo = get_fast_modinfo($COURSE);
                 $sections = $modinfo->get_section_info_all();
                 foreach ($sections as $number => $section) {
-                    if ($PAGE->url->get_path() === '/course/section.php' && optional_param('id', -1, PARAM_INT) == $section->id) {
+                    $coursesectionviewpage = local::current_url_path() === '/course/section.php';
+                    if ($coursesectionviewpage && optional_param('id', -1, PARAM_INT) == $section->id) {
                         $sectionnum = $section->sectionnum;
                     }
                     $ci = new \core_availability\info_section($section);
@@ -396,9 +390,12 @@ EOF;
             'unavailablemods' => $unavailablemods,
             'enablecompletion' => isloggedin() && $COURSE->enablecompletion,
             'format' => $COURSE->format,
-            'partialrender' => !empty(get_config('theme_snap', 'coursepartialrender')),
-            'toctype' => get_config('theme_snap', 'leftnav'),
+            'newmodid' => $SESSION->theme_snap_course_module_created_or_modified_id ?? '',
         ];
+
+        if (!empty($SESSION->theme_snap_course_module_created_or_modified_id)) {
+            unset($SESSION->theme_snap_course_module_created_or_modified_id);
+        }
 
         if (!empty($sectionnum)) {
             $coursevars->sectionnum = $sectionnum;
@@ -572,7 +569,7 @@ EOF;
             // Generate linkhtml.
             $attributes = $item->attributes ?? null;
             $o .= '<li>';
-            $o .= html_writer::link($item->link, $item->title, $attributes);
+            $o .= \core\output\html_writer::link($item->link, $item->title, $attributes);
             $o .= '</li>';
         }
         return $o;
@@ -682,7 +679,7 @@ EOF;
                 $usersubset = get_enrolled_users($coursecontext,
                         '', 0, 'u.*', 'picture desc, lastaccess desc', 0, 4, true);
                 foreach ($usersubset as $user) {
-                    $userpicture = new \user_picture($user);
+                    $userpicture = new \core\output\user_picture($user);
                     $userpicture->link = false;
                     $userpicture->size = 100;
                     $participanticons .= $OUTPUT->render($userpicture);
@@ -964,7 +961,7 @@ EOF;
             return $output;
         }
 
-        $userpicture = new \user_picture($USER);
+        $userpicture = new \core\output\user_picture($USER);
         $userpicture->link = false;
         $userpicture->alttext = false;
         $userpicture->class = 'userpicture snap-icon'; // Icon class for margin.

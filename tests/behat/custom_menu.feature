@@ -26,6 +26,9 @@ Feature: When the Moodle theme is set to Snap, custom menu should exist for the 
   Background:
     Given the following config values are set as admin:
       | linkadmincategories | 0 |
+    And the following "users" exist:
+      | username | firstname | lastname | email |
+      | teacher1 | Teacher | 1 | teacher1@example.com |
     And I log in as "admin"
     And I am on site homepage
     And I go to "Site administration > Appearance > Advanced theme settings" in snap administration
@@ -67,7 +70,7 @@ Feature: When the Moodle theme is set to Snap, custom menu should exist for the 
   Scenario: Custom menu should exists in the footer for small screen sizes.
   # Tablet size
     Given I change window size to "768x456"
-    And I log in as "Admin"
+    And I log in as "admin"
     And I am on site homepage
     And I should not see "Moodle community" in the "//header[@id='mr-nav']//div[@id='snap-custom-menu-header']" "xpath_element"
     And I should see "Moodle community" in the "//footer[@id='moodle-footer']//div[@id='snap-custom-menu-footer']" "xpath_element"
@@ -76,7 +79,7 @@ Feature: When the Moodle theme is set to Snap, custom menu should exist for the 
   Scenario: Custom menu should exists in the header for window full width.
   # 28" size monitor
     Given I change window size to "2518x456"
-    And I log in as "Admin"
+    And I log in as "admin"
     And I am on site homepage
     And I should see "Moodle community" in the "//header[@id='mr-nav']//div[@id='snap-custom-menu-header']" "xpath_element"
     And I should not see "Moodle community" in the "//footer[@id='moodle-footer']//div[@id='snap-custom-menu-footer']" "xpath_element"
@@ -92,9 +95,7 @@ Feature: When the Moodle theme is set to Snap, custom menu should exist for the 
     And I should not see "Moodle community"
     And I log in as "admin"
     And I am on site homepage
-    And I click on "#admin-menu-trigger" "css_element"
-    And I expand "Site administration" node
-    And I follow "Plugins"
+    And I go to "Site administration > Plugins" in snap administration
     And I follow "Category: Authentication"
     And I follow "Manage authentication"
     And I set the field with xpath "//select[@id='id_s__registerauth']" to "Email-based self-registration"

@@ -22,10 +22,9 @@
  */
 
 namespace theme_snap\renderables;
-use moodle_url;
 use section_info;
 
-abstract class course_action_section_base implements \renderable, \templatable {
+abstract class course_action_section_base implements \core\output\renderable, \core\output\templatable {
 
     use trait_exportable;
 
@@ -35,7 +34,12 @@ abstract class course_action_section_base implements \renderable, \templatable {
     public $title;
 
     /**
-     * @var moodle_url
+     * @var string
+     */
+    public $untitle;
+
+    /**
+     * @var \moodle_url
      */
     public $url;
 
@@ -59,6 +63,18 @@ abstract class course_action_section_base implements \renderable, \templatable {
      * @var string
      */
     public $isinmenu;
+
+    /**
+     * "data-action" to fire Core events for section controlmenu, see course/format/classes/output/local/content/section/controlmenu.php
+     * @var string
+     */
+    public $dataaction;
+
+    /**
+     * "data-id" corresponds to the id of the section, see course/format/classes/output/local/content/section/controlmenu.php
+     * @var string
+     */
+    public $dataid;
 
     abstract public function __construct($course, section_info $section, $onsectionpage = false);
 

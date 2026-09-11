@@ -49,8 +49,8 @@ Feature: Users can access the Snap feeds information using the nav button in Sna
     And I should see "Test assignment1 is due"
     And I should see "Today"
     And I am on "Course 1" course homepage
-    And I click on ".snap-activity[data-type='Assignment'] button.snap-edit-asset-more" "css_element"
-    Then I follow "Edit settings"
+    And I open "Test assignment1" actions menu
+    And I choose "Edit settings" in the open action menu
     And I expand all fieldsets
     And I set the following fields to these values:
       | Due date | ##tomorrow## |
@@ -71,8 +71,8 @@ Feature: Users can access the Snap feeds information using the nav button in Sna
     And I should see "Test assignment1 is due"
     And I should see "Today"
     And I am on "Course 1" course homepage
-    And I click on ".snap-activity[data-type='Assignment'] button.snap-edit-asset-more" "css_element"
-    Then I follow "Edit settings"
+    And I open "Test assignment1" actions menu
+    And I choose "Edit settings" in the open action menu
     And I expand all fieldsets
     And I set the following fields to these values:
       | Due date | ##tomorrow## |

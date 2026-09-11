@@ -35,8 +35,8 @@ $footnote = format_text($footnote, FORMAT_HTML, ['noclean' => true]);
 
 $custommenu = $OUTPUT->custom_menu();
 if (!empty($custommenu) && $this->page->user_is_editing() && $PAGE->pagetype == 'site-index') {
-    $url = new moodle_url('/admin/settings.php', ['section' => 'themesettings'], 'id_s__custommenuitems');
-    $link = html_writer::link($url, get_string('editcustommenu', 'theme_snap'), ['class' => 'btn btn-primary btn-sm']);
+    $url = new \core\url('/admin/settings.php', ['section' => 'themesettings'], 'id_s__custommenuitems');
+    $link = \core\output\html_writer::link($url, get_string('editcustommenu', 'theme_snap'), ['class' => 'btn btn-primary btn-sm']);
     $custommenu .= '<p class="text-right">'.$link.'</p>';
 }
 
@@ -80,6 +80,7 @@ echo '</div>';
 
 if (!empty($custommenu)) {
     echo '<div id="snap-custom-menu-footer"><br>';
+    echo '<h3 class="mx-4">' . get_string('custommenutitle', 'theme_snap') . '</h3>';
     echo $custommenu;
     echo '</div>';
 }
